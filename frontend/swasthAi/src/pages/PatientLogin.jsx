@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Shield, Activity, User, Heart, AlertCircle } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Shield, Activity, User, Heart, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -11,11 +11,19 @@ export default function PatientLogin() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
+    
+    if (!email || !password) {
+      setError('Please fill in all fields');
+      toast.error('Please fill in all fields');
+      setLoading(false);
+      return;
+    }
     
     try {
       const result = await login(email, password);
@@ -53,7 +61,6 @@ export default function PatientLogin() {
         
         <div className="absolute inset-0 flex flex-col justify-center p-12 text-white">
           <div className="flex items-center gap-3 mb-6">
-            {/* ✅ LOGO PNG */}
             <img 
               src="/logo.png" 
               alt="SwasthAI Sentinel" 
@@ -115,10 +122,6 @@ export default function PatientLogin() {
             </div>
           )}
 
-          <div className="bg-blue-50/50 rounded-xl p-3 border border-blue-100/50 text-xs text-slate-500 mb-4">
-            <p>💡 Don't have an account? <Link to="/signup" className="text-[#06B6D4] font-medium hover:underline">Sign up as Patient</Link></p>
-          </div>
-
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="text-sm font-medium text-slate-700 block mb-1.5">Email</label>
@@ -139,13 +142,20 @@ export default function PatientLogin() {
               <div className="relative">
                 <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input 
-                  type="password" 
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 bg-slate-50/80 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#06B6D4]/30 focus:border-[#06B6D4] transition" 
+                  className="w-full pl-11 pr-12 py-3 bg-slate-50/80 border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#06B6D4]/30 focus:border-[#06B6D4] transition" 
                   placeholder="••••••••"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
             </div>
             <div className="flex items-center justify-between text-sm">
@@ -182,7 +192,11 @@ export default function PatientLogin() {
 
           <div className="mt-4 p-3 bg-blue-50/50 rounded-2xl border border-blue-100/50 text-xs text-slate-500 flex items-center gap-2">
             <Heart size={14} className="text-[#06B6D4]" />
-            <span>Don't have an account? <Link to="/signup" className="text-[#06B6D4] font-medium hover:underline">Sign Up</Link></span>
+            <span>Demo: <strong>patient@swasthai.com</strong> / <strong>patient123</strong></span>
+          </div>
+
+          <div className="mt-3 text-center text-xs text-slate-400">
+            Don't have an account? <Link to="/signup" className="text-[#06B6D4] font-medium hover:underline">Sign Up</Link>
           </div>
         </div>
       </div>

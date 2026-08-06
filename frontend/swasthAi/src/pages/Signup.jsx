@@ -226,7 +226,7 @@ export default function Signup() {
                 className={`w-full px-4 py-3 bg-slate-50/80 rounded-xl border ${
                   errors.name ? 'border-red-400' : 'border-slate-200'
                 } focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 transition`}
-                placeholder="Full Name"
+                placeholder="Enter your full name"
               />
               {errors.name && (
                 <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
@@ -354,7 +354,7 @@ export default function Signup() {
                     className={`w-full px-4 py-3 bg-slate-50/80 rounded-xl border ${
                       errors.hospitalName ? 'border-red-400' : 'border-slate-200'
                     } focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30`}
-                    placeholder="City District Hospital"
+                    placeholder="e.g. City District Hospital"
                   />
                   {errors.hospitalName && (
                     <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
@@ -371,7 +371,7 @@ export default function Signup() {
                     className={`w-full px-4 py-3 bg-slate-50/80 rounded-xl border ${
                       errors.hospitalCode ? 'border-red-400' : 'border-slate-200'
                     } focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30`}
-                    placeholder="CDH-001"
+                    placeholder="e.g. CDH-001"
                   />
                   {errors.hospitalCode && (
                     <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
@@ -417,7 +417,7 @@ export default function Signup() {
                     className={`w-full px-4 py-3 bg-slate-50/80 rounded-xl border ${
                       errors.age ? 'border-red-400' : 'border-slate-200'
                     } focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30`}
-                    placeholder="Age"
+                    placeholder="Your age"
                   />
                   {errors.age && (
                     <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
@@ -464,7 +464,7 @@ export default function Signup() {
                 value={formData.specialization}
                 onChange={(e) => setFormData({...formData, specialization: e.target.value})}
                 className="w-full px-4 py-3 bg-slate-50/80 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"
-                placeholder="Internal Medicine, Cardiology, etc."
+                placeholder="e.g. Internal Medicine, Cardiology"
               />
             </div>
             
@@ -521,7 +521,6 @@ export default function Signup() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 via-white to-cyan-50/30">
       <div className="w-full max-w-4xl glass-premium rounded-3xl p-8 md:p-10 card-hover border border-white/30">
         <div className="flex items-center gap-3 mb-6">
-          {/* ✅ LOGO PNG */}
           <img 
             src="/logo.png" 
             alt="SwasthAI Sentinel" 

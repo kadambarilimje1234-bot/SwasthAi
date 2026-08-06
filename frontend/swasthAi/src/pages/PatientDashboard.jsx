@@ -3,12 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
   Heart, Thermometer, Droplet, Wind, Activity, 
-  User, Calendar, Clock, Pill, FileText, 
+  User, Calendar, Clock, FileText, 
   MessageCircle, Bell, ChevronRight, 
   ArrowUp, ArrowDown, CheckCircle, AlertCircle, 
-  X, Phone, Video, Mail, MapPin, Sparkles,
+  X, Phone, Mail, MapPin, Sparkles,
   Download, Eye, Stethoscope, LogOut,
-  Brain, Shield, Award, UserCircle, RefreshCw
+  Brain, Shield, Award, UserCircle, RefreshCw,
+  PhoneCall, Video
 } from 'lucide-react';
 import { patientAPI, vitalsAPI, predictionAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -29,6 +30,30 @@ export default function PatientDashboard() {
     { type: 'ai', message: 'Hello! I\'m your AI Health Assistant. How can I help you today?' }
   ]);
 
+  // ============ APPOINTMENTS STATE ============
+  const [appointments, setAppointments] = useState([]);
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [appointmentForm, setAppointmentForm] = useState({
+    doctor: '',
+    date: '',
+    time: '',
+    hospital: ''
+  });
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+
+  // ============ LAB REPORTS STATE ============
+  const [labReports, setLabReports] = useState([]);
+  const [showLabReportModal, setShowLabReportModal] = useState(false);
+  const [selectedLabReport, setSelectedLabReport] = useState(null);
+
+  // ============ DOCTORS LIST ============
+  const doctorsList = [
+    { id: 1, name: 'Dr. Priya Sharma', specialization: 'Internal Medicine', hospital: 'City District Hospital', email: 'priya.sharma@hospital.com', phone: '+91 98765 43210' },
+    { id: 2, name: 'Dr. Amit Kumar', specialization: 'Cardiology', hospital: 'City District Hospital', email: 'amit.kumar@hospital.com', phone: '+91 98765 43211' },
+    { id: 3, name: 'Dr. Sneha Reddy', specialization: 'Neurology', hospital: 'City District Hospital', email: 'sneha.reddy@hospital.com', phone: '+91 98765 43212' },
+    { id: 4, name: 'Dr. Vikram Singh', specialization: 'Orthopedics', hospital: 'City District Hospital', email: 'vikram.singh@hospital.com', phone: '+91 98765 43213' },
+  ];
+
   // ============ GET GREETING BASED ON TIME ============
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -47,17 +72,14 @@ export default function PatientDashboard() {
     try {
       setLoading(true);
       
-      // Get all patients from database
       const response = await patientAPI.getAll();
       const patients = response.data.data || [];
       
       console.log('📋 All patients from DB:', patients);
       console.log('👤 Current logged-in user:', user);
       
-      // ✅ FIND PATIENT MATCHING LOGGED-IN USER
       let patientData = null;
       
-      // Method 1: Match by email
       if (user?.email) {
         patientData = patients.find(p => 
           p.email?.toLowerCase() === user.email?.toLowerCase()
@@ -67,7 +89,6 @@ export default function PatientDashboard() {
         }
       }
       
-      // Method 2: Match by name (if email not found)
       if (!patientData && user?.name) {
         patientData = patients.find(p => 
           p.name?.toLowerCase() === user.name?.toLowerCase()
@@ -77,7 +98,6 @@ export default function PatientDashboard() {
         }
       }
       
-      // Method 3: Match by patientId (if available)
       if (!patientData && user?.patientId) {
         patientData = patients.find(p => 
           p.patientId === user.patientId
@@ -87,7 +107,6 @@ export default function PatientDashboard() {
         }
       }
       
-      // ❌ If no match found, show error
       if (!patientData) {
         console.error('❌ No matching patient found for user:', user);
         toast.error('No patient record found for this account');
@@ -98,7 +117,6 @@ export default function PatientDashboard() {
       
       setPatient(patientData);
       
-      // Get vitals for this patient
       try {
         const vitalsRes = await vitalsAPI.getHistory(patientData._id, { limit: 10 });
         setVitals(vitalsRes.data.data.vitals || []);
@@ -107,13 +125,63 @@ export default function PatientDashboard() {
         console.log('No vitals found for patient');
       }
       
-      // Get predictions for this patient
       try {
         const predRes = await predictionAPI.getPatientPredictions(patientData._id, { limit: 5 });
         setPredictions(predRes.data.data.predictions || []);
         console.log('🧠 Predictions fetched:', predRes.data.data.predictions?.length || 0);
       } catch (pError) {
         console.log('No predictions found for patient');
+      }
+
+      // Load appointments from localStorage
+      const savedAppointments = localStorage.getItem(`appointments_${patientData._id}`);
+      if (savedAppointments) {
+        setAppointments(JSON.parse(savedAppointments));
+      } else {
+        const defaultAppointments = [
+          { 
+            id: Date.now(), 
+            doctor: patientData.assignedDoctor?.name || 'Dr. Priya Sharma', 
+            date: '15 Aug 2026', 
+            time: '10:00 AM', 
+            hospital: patientData.assignedDoctor?.hospital || 'City District Hospital',
+            status: 'upcoming'
+          }
+        ];
+        setAppointments(defaultAppointments);
+        localStorage.setItem(`appointments_${patientData._id}`, JSON.stringify(defaultAppointments));
+      }
+
+      // Load lab reports from localStorage
+      const savedReports = localStorage.getItem(`labReports_${patientData._id}`);
+      if (savedReports) {
+        setLabReports(JSON.parse(savedReports));
+      } else {
+        const defaultReports = [
+          { 
+            id: Date.now(), 
+            name: 'Complete Blood Count', 
+            date: '10 Aug 2026', 
+            status: 'Normal',
+            details: 'All parameters are within normal range. WBC: 7.2, RBC: 5.1, Hemoglobin: 14.2'
+          },
+          { 
+            id: Date.now() + 1, 
+            name: 'Liver Function Test', 
+            date: '05 Aug 2026', 
+            status: 'Normal',
+            details: 'Liver enzymes are within normal range. ALT: 28, AST: 22, ALP: 65'
+          },
+          { 
+            id: Date.now() + 2, 
+            name: 'Kidney Function Test', 
+            date: '28 Jul 2026', 
+            status: 'Abnormal',
+            details: 'Creatinine slightly elevated. Creatinine: 1.8, Urea: 42, eGFR: 65'
+          },
+        ];
+        setLabReports(defaultReports);
+        localStorage.setItem(`labReports_${patientData._id}`, JSON.stringify(defaultReports));
       }
       
     } catch (error) {
@@ -122,6 +190,164 @@ export default function PatientDashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // ============ ✅ FIXED: Doctor & Nurse Helper Functions ============
+  const getDoctorName = () => {
+    if (patient?.assignedDoctor) {
+      if (typeof patient.assignedDoctor === 'object') {
+        return patient.assignedDoctor.name || 'Not Assigned';
+      }
+      const doctor = doctorsList.find(d => 
+        d.id === patient.assignedDoctor || 
+        d.name === patient.assignedDoctor
+      );
+      return doctor?.name || 'Not Assigned';
+    }
+    return 'Not Assigned';
+  };
+
+  const getDoctorSpecialization = () => {
+    if (patient?.assignedDoctor) {
+      if (typeof patient.assignedDoctor === 'object') {
+        return patient.assignedDoctor.specialization || 'General Medicine';
+      }
+      const doctor = doctorsList.find(d => 
+        d.id === patient.assignedDoctor || 
+        d.name === patient.assignedDoctor
+      );
+      return doctor?.specialization || 'General Medicine';
+    }
+    return 'General Medicine';
+  };
+
+  const getDoctorHospital = () => {
+    if (patient?.assignedDoctor) {
+      if (typeof patient.assignedDoctor === 'object') {
+        return patient.assignedDoctor.hospital || 'City Hospital';
+      }
+      const doctor = doctorsList.find(d => 
+        d.id === patient.assignedDoctor || 
+        d.name === patient.assignedDoctor
+      );
+      return doctor?.hospital || 'City Hospital';
+    }
+    return 'City Hospital';
+  };
+
+  const getDoctorEmail = () => {
+    if (patient?.assignedDoctor) {
+      if (typeof patient.assignedDoctor === 'object') {
+        return patient.assignedDoctor.email || 'doctor@hospital.com';
+      }
+      const doctor = doctorsList.find(d => 
+        d.id === patient.assignedDoctor || 
+        d.name === patient.assignedDoctor
+      );
+      return doctor?.email || 'doctor@hospital.com';
+    }
+    return 'doctor@hospital.com';
+  };
+
+  const getDoctorPhone = () => {
+    if (patient?.assignedDoctor) {
+      if (typeof patient.assignedDoctor === 'object') {
+        return patient.assignedDoctor.phone || '+91 98765 43210';
+      }
+      const doctor = doctorsList.find(d => 
+        d.id === patient.assignedDoctor || 
+        d.name === patient.assignedDoctor
+      );
+      return doctor?.phone || '+91 98765 43210';
+    }
+    return '+91 98765 43210';
+  };
+
+  const getNurseName = () => {
+    if (patient?.assignedNurse) {
+      if (typeof patient.assignedNurse === 'object') {
+        return patient.assignedNurse.name || 'Not Assigned';
+      }
+      return 'Nurse ' + patient.assignedNurse;
+    }
+    return 'Not Assigned';
+  };
+
+  const getNursePhone = () => {
+    if (patient?.assignedNurse) {
+      if (typeof patient.assignedNurse === 'object') {
+        return patient.assignedNurse.phone || '+91 98765 43211';
+      }
+      return '+91 98765 43211';
+    }
+    return '+91 98765 43211';
+  };
+
+  const getNurseEmail = () => {
+    if (patient?.assignedNurse) {
+      if (typeof patient.assignedNurse === 'object') {
+        return patient.assignedNurse.email || 'nurse@hospital.com';
+      }
+      return 'nurse@hospital.com';
+    }
+    return 'nurse@hospital.com';
+  };
+
+  // ============ APPOINTMENT FUNCTIONS ============
+  const handleAddAppointment = () => {
+    if (!appointmentForm.doctor || !appointmentForm.date || !appointmentForm.time) {
+      toast.error('Please fill all required fields');
+      return;
+    }
+
+    const newAppointment = {
+      id: Date.now(),
+      doctor: appointmentForm.doctor,
+      date: appointmentForm.date,
+      time: appointmentForm.time,
+      hospital: appointmentForm.hospital || 'City District Hospital',
+      status: 'upcoming'
+    };
+
+    const updatedAppointments = [...appointments, newAppointment];
+    setAppointments(updatedAppointments);
+    localStorage.setItem(`appointments_${patient._id}`, JSON.stringify(updatedAppointments));
+    
+    toast.success('Appointment booked successfully!');
+    setShowAppointmentModal(false);
+    setAppointmentForm({ doctor: '', date: '', time: '', hospital: '' });
+  };
+
+  const handleDeleteAppointment = (id) => {
+    const updatedAppointments = appointments.filter(apt => apt.id !== id);
+    setAppointments(updatedAppointments);
+    localStorage.setItem(`appointments_${patient._id}`, JSON.stringify(updatedAppointments));
+    toast.success('Appointment cancelled');
+  };
+
+  const handleRescheduleAppointment = (id) => {
+    const apt = appointments.find(a => a.id === id);
+    if (apt) {
+      setSelectedAppointment(apt);
+      setAppointmentForm({
+        doctor: apt.doctor,
+        date: apt.date,
+        time: apt.time,
+        hospital: apt.hospital
+      });
+      handleDeleteAppointment(id);
+      setShowAppointmentModal(true);
+    }
+  };
+
+  // ============ LAB REPORT FUNCTIONS ============
+  const handleViewReport = (report) => {
+    setSelectedLabReport(report);
+    setShowLabReportModal(true);
+  };
+
+  const handleDownloadReport = (report) => {
+    toast.success(`Downloading ${report.name}...`);
   };
 
   const handleLogout = () => {
@@ -148,8 +374,10 @@ export default function PatientDashboard() {
         response = `Your blood pressure is ${latest.systolicBP || '120'}/${latest.diastolicBP || '80'} mmHg. Normal range is 90-140/60-90 mmHg. ${latest.systolicBP > 140 ? '⚠️ This is slightly high. Please consult your doctor.' : '✅ This is within normal range.'}`;
       } else if (msg.includes('temp') || msg.includes('temperature')) {
         response = `Your temperature is ${latest.temperature || '98.6'}°F. Normal range is 97.0-100.4°F. ${latest.temperature > 100.4 ? '⚠️ You have a fever. Please consult your doctor.' : '✅ This is within normal range.'}`;
-      } else if (msg.includes('medic')) {
-        response = `Your current medications: Please check with your doctor for the latest prescription.`;
+      } else if (msg.includes('report') || msg.includes('lab')) {
+        response = `You have ${labReports.length} lab reports available. Check the Lab Reports section to view them.`;
+      } else if (msg.includes('appointment')) {
+        response = `You have ${appointments.length} upcoming appointments. Check the Appointments section for details.`;
       } else {
         response = `Based on your latest vitals, your health status is ${patient?.currentStatus || 'STABLE'}. Keep monitoring your health regularly.`;
       }
@@ -162,7 +390,7 @@ export default function PatientDashboard() {
   // Get latest vitals
   const latestVitals = vitals[0] || {};
 
-  // Calculate health score based on vitals
+  // Calculate health score
   const calculateHealthScore = () => {
     let score = 92;
     if (latestVitals.heartRate > 100 || latestVitals.heartRate < 60) score -= 10;
@@ -185,8 +413,6 @@ export default function PatientDashboard() {
 
   const status = getStatus(healthScore);
   const greeting = getGreeting();
-
-  // ✅ Get the actual patient name from database
   const patientName = patient?.name || user?.name || 'Patient';
 
   if (loading) {
@@ -227,28 +453,10 @@ export default function PatientDashboard() {
     { key: 'respiratoryRate', icon: Wind, label: 'Respiration', value: latestVitals.respiratoryRate || '--', unit: '/min', normal: '12-22', color: 'text-purple-500', bg: 'bg-purple-50' },
   ];
 
-  // Mock data for appointments, medications, lab reports
-  const appointments = [
-    { doctor: patient.assignedDoctor?.name || 'Dr. Priya Sharma', date: '15 Aug 2026', time: '10:00 AM', hospital: patient.assignedDoctor?.hospital || 'City District Hospital' },
-    { doctor: 'Dr. Amit Kumar', date: '22 Aug 2026', time: '2:30 PM', hospital: 'City District Hospital' },
-  ];
-
-  const medications = [
-    { name: 'Amoxicillin', dosage: '500mg', time: 'Morning', remaining: 5 },
-    { name: 'Paracetamol', dosage: '650mg', time: 'Night', remaining: 3 },
-    { name: 'Vitamin C', dosage: '500mg', time: 'Morning', remaining: 10 },
-  ];
-
-  const labReports = [
-    { name: 'Complete Blood Count', date: '10 Aug 2026', status: 'Normal' },
-    { name: 'Liver Function Test', date: '05 Aug 2026', status: 'Normal' },
-    { name: 'Kidney Function Test', date: '28 Jul 2026', status: 'Abnormal' },
-  ];
-
   const notifications = [
-    { title: 'Medicine Reminder', message: 'Take Amoxicillin 500mg', time: '2 hours ago', type: 'medication' },
-    { title: 'Appointment Reminder', message: 'Visit to doctor tomorrow', time: '5 hours ago', type: 'appointment' },
+    { title: 'Appointment Reminder', message: 'Visit to doctor tomorrow at 10:00 AM', time: '2 hours ago', type: 'appointment' },
     { title: 'Lab Report Ready', message: 'Your CBC report is available', time: '1 day ago', type: 'lab' },
+    { title: 'Health Update', message: 'Your health status is STABLE', time: '3 days ago', type: 'health' },
   ];
 
   return (
@@ -258,7 +466,6 @@ export default function PatientDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
-              {/* ✅ LOGO PNG */}
               <img 
                 src="/logo.png" 
                 alt="SwasthAI Sentinel" 
@@ -343,7 +550,6 @@ export default function PatientDashboard() {
               </div>
             </div>
             
-            {/* Health Score */}
             <div className="flex items-center gap-6">
               <div className="text-center">
                 <div className="relative w-20 h-20">
@@ -398,7 +604,7 @@ export default function PatientDashboard() {
           </div>
         </div>
 
-        {/* ===== DOCTOR & NURSE ===== */}
+        {/* ===== DOCTOR & NURSE - FIXED WITH REAL NAMES ===== */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Doctor Card */}
           <motion.div 
@@ -411,30 +617,22 @@ export default function PatientDashboard() {
             </h3>
             <div className="flex items-start gap-4">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#2563EB] to-[#06B6D4] flex items-center justify-center text-white text-xl font-bold">
-                {patient.assignedDoctor?.name?.charAt(0) || 'D'}
+                {getDoctorName().charAt(0) || 'D'}
               </div>
               <div className="flex-1">
-                <p className="font-bold text-slate-800">{patient.assignedDoctor?.name || 'Not Assigned'}</p>
-                <p className="text-xs text-slate-400">{patient.assignedDoctor?.specialization || 'General Medicine'}</p>
-                <p className="text-xs text-slate-400">{patient.assignedDoctor?.hospital || 'City Hospital'}</p>
+                <p className="font-bold text-slate-800">{getDoctorName()}</p>
+                <p className="text-xs text-slate-400">{getDoctorSpecialization()}</p>
+                <p className="text-xs text-slate-400">{getDoctorHospital()}</p>
+                <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                  <Phone size={12} className="text-slate-400" /> {getDoctorPhone()}
+                </p>
+                <p className="text-xs text-slate-400 flex items-center gap-1">
+                  <Mail size={12} className="text-slate-400" /> {getDoctorEmail()}
+                </p>
                 <p className="text-xs text-emerald-600 flex items-center gap-1 mt-1">
                   <span className="w-2 h-2 rounded-full bg-emerald-400"></span> Available Today
                 </p>
               </div>
-            </div>
-            <div className="flex gap-2 mt-4">
-              <button 
-                onClick={() => toast.success('Calling doctor...')}
-                className="flex-1 py-2 bg-[#2563EB]/10 text-[#2563EB] rounded-xl text-sm font-medium hover:bg-[#2563EB]/20 transition flex items-center justify-center gap-1"
-              >
-                <Phone size={14} /> Call
-              </button>
-              <button 
-                onClick={() => toast.success('Message sent to doctor')}
-                className="flex-1 py-2 bg-emerald-500/10 text-emerald-600 rounded-xl text-sm font-medium hover:bg-emerald-500/20 transition flex items-center justify-center gap-1"
-              >
-                <MessageCircle size={14} /> Message
-              </button>
             </div>
           </motion.div>
 
@@ -449,89 +647,84 @@ export default function PatientDashboard() {
             </h3>
             <div className="flex items-start gap-4">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#06B6D4] to-[#2563EB] flex items-center justify-center text-white text-xl font-bold">
-                {patient.assignedNurse?.name?.charAt(0) || 'N'}
+                {getNurseName().charAt(0) || 'N'}
               </div>
               <div className="flex-1">
-                <p className="font-bold text-slate-800">{patient.assignedNurse?.name || 'Not Assigned'}</p>
+                <p className="font-bold text-slate-800">{getNurseName()}</p>
                 <p className="text-xs text-slate-400">Morning Shift (7AM - 3PM)</p>
                 <p className="text-xs text-slate-400">Ward: {patient.ward || '--'}</p>
-                <p className="text-xs text-slate-400 mt-1">📞 {patient.assignedNurse?.phone || '--'}</p>
+                <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                  <Phone size={12} className="text-slate-400" /> {getNursePhone()}
+                </p>
+                <p className="text-xs text-slate-400 flex items-center gap-1">
+                  <Mail size={12} className="text-slate-400" /> {getNurseEmail()}
+                </p>
               </div>
             </div>
-            <button 
-              onClick={() => toast.success('Chat with nurse started')}
-              className="w-full mt-4 py-2 bg-[#06B6D4]/10 text-[#06B6D4] rounded-xl text-sm font-medium hover:bg-[#06B6D4]/20 transition flex items-center justify-center gap-1"
-            >
-              <MessageCircle size={14} /> Chat with Nurse
-            </button>
           </motion.div>
-        </div>
-
-        {/* ===== MEDICATIONS ===== */}
-        <div>
-          <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <Pill size={20} className="text-[#2563EB]" /> Current Medications
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {medications.map((med, i) => (
-              <motion.div
-                key={i}
-                whileHover={{ y: -2 }}
-                className="glass-premium rounded-2xl p-4 border border-white/30"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-slate-800">{med.name}</p>
-                    <p className="text-xs text-slate-400">{med.dosage}</p>
-                  </div>
-                  <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-600 rounded-full">{med.time}</span>
-                </div>
-                <p className="text-xs text-slate-400 mt-2">📦 {med.remaining} days remaining</p>
-              </motion.div>
-            ))}
-          </div>
         </div>
 
         {/* ===== APPOINTMENTS ===== */}
         <div>
-          <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <Calendar size={20} className="text-[#2563EB]" /> Upcoming Appointments
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <Calendar size={20} className="text-[#2563EB]" /> Upcoming Appointments
+            </h2>
+            <button 
+              onClick={() => setShowAppointmentModal(true)}
+              className="px-4 py-2 bg-[#2563EB] text-white rounded-xl text-sm font-medium hover:bg-[#2563EB]/90 transition flex items-center gap-2"
+            >
+              + Book Appointment
+            </button>
+          </div>
           <div className="space-y-3">
-            {appointments.map((apt, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className="glass-premium rounded-2xl p-4 border border-white/30 flex flex-col md:flex-row md:items-center justify-between gap-3"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-[#2563EB]/10 flex items-center justify-center">
-                    <Calendar size={18} className="text-[#2563EB]" />
+            {appointments.length === 0 ? (
+              <div className="glass-premium rounded-2xl p-8 text-center border border-white/30">
+                <Calendar size={32} className="text-slate-300 mx-auto mb-2" />
+                <p className="text-slate-400">No appointments scheduled</p>
+                <button 
+                  onClick={() => setShowAppointmentModal(true)}
+                  className="mt-2 text-[#2563EB] text-sm font-medium hover:underline"
+                >
+                  Book an appointment
+                </button>
+              </div>
+            ) : (
+              appointments.map((apt, i) => (
+                <motion.div
+                  key={apt.id || i}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  className="glass-premium rounded-2xl p-4 border border-white/30 flex flex-col md:flex-row md:items-center justify-between gap-3"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-[#2563EB]/10 flex items-center justify-center">
+                      <Calendar size={18} className="text-[#2563EB]" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-slate-800">{apt.doctor}</p>
+                      <p className="text-xs text-slate-400">{apt.date} · {apt.time}</p>
+                      <p className="text-xs text-slate-400">{apt.hospital}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-slate-800">{apt.doctor}</p>
-                    <p className="text-xs text-slate-400">{apt.date} · {apt.time}</p>
-                    <p className="text-xs text-slate-400">{apt.hospital}</p>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => handleRescheduleAppointment(apt.id)}
+                      className="px-4 py-1.5 bg-amber-500/10 text-amber-600 rounded-xl text-xs font-medium hover:bg-amber-500/20 transition"
+                    >
+                      Reschedule
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteAppointment(apt.id)}
+                      className="px-4 py-1.5 bg-red-500/10 text-red-500 rounded-xl text-xs font-medium hover:bg-red-500/20 transition"
+                    >
+                      Cancel
+                    </button>
                   </div>
-                </div>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => toast.success('Joining online appointment...')}
-                    className="px-4 py-1.5 bg-[#2563EB]/10 text-[#2563EB] rounded-xl text-xs font-medium hover:bg-[#2563EB]/20 transition"
-                  >
-                    Join Online
-                  </button>
-                  <button 
-                    onClick={() => toast.success('Reschedule request sent')}
-                    className="px-4 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-medium hover:bg-slate-200 transition"
-                  >
-                    Reschedule
-                  </button>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              ))
+            )}
           </div>
         </div>
 
@@ -543,7 +736,7 @@ export default function PatientDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {labReports.map((report, i) => (
               <motion.div
-                key={i}
+                key={report.id || i}
                 whileHover={{ y: -2 }}
                 className="glass-premium rounded-2xl p-4 border border-white/30"
               >
@@ -560,13 +753,13 @@ export default function PatientDashboard() {
                 </div>
                 <div className="flex gap-2 mt-3">
                   <button 
-                    onClick={() => toast.success(`Opening ${report.name}...`)}
+                    onClick={() => handleViewReport(report)}
                     className="flex-1 py-1.5 bg-[#2563EB]/10 text-[#2563EB] rounded-xl text-xs font-medium hover:bg-[#2563EB]/20 transition flex items-center justify-center gap-1"
                   >
                     <Eye size={12} /> View
                   </button>
                   <button 
-                    onClick={() => toast.success(`Downloading ${report.name}...`)}
+                    onClick={() => handleDownloadReport(report)}
                     className="flex-1 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-medium hover:bg-slate-200 transition flex items-center justify-center gap-1"
                   >
                     <Download size={12} /> Download
@@ -601,7 +794,7 @@ export default function PatientDashboard() {
             <div className="bg-white/30 rounded-2xl p-4 border border-white/30">
               <p className="text-xs font-medium text-slate-600">AI Recommendations</p>
               <ul className="text-xs text-slate-500 space-y-1 mt-2">
-                <li>• Continue your current medications</li>
+                <li>• Continue regular health monitoring</li>
                 <li>• Stay hydrated - drink 8 glasses of water</li>
                 <li>• Light exercise for 20 minutes daily</li>
                 <li>• Next checkup in 2 weeks</li>
@@ -610,6 +803,148 @@ export default function PatientDashboard() {
           </div>
         </motion.div>
       </div>
+
+      {/* ========== APPOINTMENT MODAL ========== */}
+      <AnimatePresence>
+        {showAppointmentModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowAppointmentModal(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="glass-premium rounded-3xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto border border-white/30"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800">Book Appointment</h3>
+                  <p className="text-sm text-slate-400">Select doctor and schedule time</p>
+                </div>
+                <button onClick={() => setShowAppointmentModal(false)} className="p-2 rounded-xl hover:bg-slate-100 transition">
+                  <X size={20} className="text-slate-400" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-700">Select Doctor *</label>
+                  <select
+                    value={appointmentForm.doctor}
+                    onChange={(e) => setAppointmentForm({...appointmentForm, doctor: e.target.value})}
+                    className="w-full px-4 py-2.5 bg-slate-50/80 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 text-sm"
+                  >
+                    <option value="">Select a doctor...</option>
+                    {doctorsList.map(doc => (
+                      <option key={doc.id} value={doc.name}>
+                        {doc.name} - {doc.specialization}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-700">Date *</label>
+                  <input
+                    type="date"
+                    value={appointmentForm.date}
+                    onChange={(e) => setAppointmentForm({...appointmentForm, date: e.target.value})}
+                    className="w-full px-4 py-2.5 bg-slate-50/80 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-700">Time *</label>
+                  <input
+                    type="time"
+                    value={appointmentForm.time}
+                    onChange={(e) => setAppointmentForm({...appointmentForm, time: e.target.value})}
+                    className="w-full px-4 py-2.5 bg-slate-50/80 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-slate-700">Hospital</label>
+                  <input
+                    type="text"
+                    value={appointmentForm.hospital}
+                    onChange={(e) => setAppointmentForm({...appointmentForm, hospital: e.target.value})}
+                    placeholder="City District Hospital"
+                    className="w-full px-4 py-2.5 bg-slate-50/80 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30 text-sm"
+                  />
+                </div>
+
+                <button 
+                  onClick={handleAddAppointment}
+                  className="w-full py-3 btn-primary rounded-2xl flex items-center justify-center gap-2"
+                >
+                  <Calendar size={18} /> Book Appointment
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ========== LAB REPORT VIEW MODAL ========== */}
+      <AnimatePresence>
+        {showLabReportModal && selectedLabReport && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowLabReportModal(false)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="glass-premium rounded-3xl p-6 max-w-md w-full border border-white/30"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800">{selectedLabReport.name}</h3>
+                  <p className="text-sm text-slate-400">{selectedLabReport.date}</p>
+                </div>
+                <button onClick={() => setShowLabReportModal(false)} className="p-2 rounded-xl hover:bg-slate-100 transition">
+                  <X size={20} className="text-slate-400" />
+                </button>
+              </div>
+
+              <div className={`px-3 py-1.5 rounded-full inline-block text-sm font-medium ${
+                selectedLabReport.status === 'Normal' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'
+              }`}>
+                Status: {selectedLabReport.status}
+              </div>
+
+              <div className="mt-4 p-4 bg-slate-50/80 rounded-xl border border-white/30">
+                <p className="text-sm text-slate-600 whitespace-pre-wrap">
+                  {selectedLabReport.details || 'No additional details available for this report.'}
+                </p>
+              </div>
+
+              <div className="flex gap-3 mt-4">
+                <button 
+                  onClick={() => handleDownloadReport(selectedLabReport)}
+                  className="flex-1 py-2.5 bg-[#2563EB] text-white rounded-xl flex items-center justify-center gap-2 hover:bg-[#2563EB]/90 transition"
+                >
+                  <Download size={16} /> Download Report
+                </button>
+                <button 
+                  onClick={() => setShowLabReportModal(false)}
+                  className="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ========== FLOATING AI CHAT BUTTON ========== */}
       <div className="fixed bottom-6 right-6 z-50">

@@ -41,6 +41,7 @@ export default function PatientList() {
     return matchesSearch && matchesWard;
   });
 
+  // ✅ FIXED: Status badge with correct colors
   const getStatusBadge = (status) => {
     switch(status) {
       case 'CRITICAL': 
@@ -52,10 +53,20 @@ export default function PatientList() {
     }
   };
 
-  const getRiskColor = (risk) => {
-    if (risk >= 80) return 'text-red-500';
-    if (risk >= 60) return 'text-amber-500';
+  // ✅ FIXED: Risk color - STATUS based
+  const getRiskColor = (status) => {
+    if (status === 'CRITICAL') return 'text-red-500';
+    if (status === 'WARNING') return 'text-amber-500';
     return 'text-emerald-500';
+  };
+
+  // ✅ FIXED: Status color for profile icon
+  const getStatusBgColor = (status) => {
+    switch(status) {
+      case 'CRITICAL': return 'bg-red-500';
+      case 'WARNING': return 'bg-amber-500';
+      default: return 'bg-emerald-500';
+    }
   };
 
   if (loading) {
@@ -145,15 +156,15 @@ export default function PatientList() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               whileHover={{ y: -4 }}
-              className="glass-premium rounded-3xl p-5 border border-white/30 card-hover"
+              className={`glass-premium rounded-3xl p-5 border border-white/30 card-hover ${
+                patient.currentStatus === 'CRITICAL' ? 'border-red-400/50' :
+                patient.currentStatus === 'WARNING' ? 'border-amber-400/50' :
+                'border-emerald-400/30'
+              }`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-lg ${
-                    patient.currentStatus === 'CRITICAL' ? 'bg-red-500' :
-                    patient.currentStatus === 'WARNING' ? 'bg-amber-500' :
-                    'bg-emerald-500'
-                  }`}>
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-lg ${getStatusBgColor(patient.currentStatus)}`}>
                     {patient.name?.charAt(0) || 'P'}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -185,7 +196,7 @@ export default function PatientList() {
               <div className="mt-3 flex items-center justify-between">
                 <div>
                   <p className="text-xs text-slate-400">Risk Score</p>
-                  <p className={`text-lg font-bold ${getRiskColor(patient.currentRisk)}`}>
+                  <p className={`text-lg font-bold ${getRiskColor(patient.currentStatus)}`}>
                     {patient.currentRisk || 0}%
                   </p>
                 </div>

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { patientAPI, vitalsAPI, predictionAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import PatientTimeline from '../components/Timeline/PatientTimeline';
 
 export default function PatientDetail() {
   const { id } = useParams();
@@ -30,15 +31,12 @@ export default function PatientDetail() {
   const fetchPatientData = async () => {
     try {
       setLoading(true);
-      // Get patient details
       const patientRes = await patientAPI.getById(id);
       setPatient(patientRes.data.data);
       
-      // Get vitals history
       const vitalsRes = await vitalsAPI.getHistory(id, { limit: 20 });
       setVitalsHistory(vitalsRes.data.data.vitals || []);
       
-      // Get predictions
       const predRes = await predictionAPI.getPatientPredictions(id, { limit: 10 });
       setPredictions(predRes.data.data.predictions || []);
       
@@ -58,7 +56,6 @@ export default function PatientDetail() {
     setChatMessage('');
     setIsTyping(true);
     
-    // Simulate AI response based on patient data
     setTimeout(() => {
       let response = '';
       if (userMessage.toLowerCase().includes('risk')) {
@@ -75,6 +72,25 @@ export default function PatientDetail() {
       setChatHistory(prev => [...prev, { type: 'ai', message: response }]);
       setIsTyping(false);
     }, 1500);
+  };
+
+  const getStatusStyles = (status) => {
+    switch(status) {
+      case 'CRITICAL':
+        return 'bg-red-500 text-white';
+      case 'WARNING':
+        return 'bg-amber-500 text-white';
+      default:
+        return 'bg-emerald-500 text-white';
+    }
+  };
+
+  const getProfileIconBg = (status) => {
+    switch(status) {
+      case 'CRITICAL': return 'bg-red-500';
+      case 'WARNING': return 'bg-amber-500';
+      default: return 'bg-emerald-500';
+    }
   };
 
   if (loading) {
@@ -101,31 +117,21 @@ export default function PatientDetail() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Patient Details</h1>
           <p className="text-sm text-slate-400">Complete health record and monitoring</p>
         </div>
-        <div className={`px-4 py-2 rounded-xl text-sm font-bold ${
-          patient.currentStatus === 'CRITICAL' ? 'bg-red-500 text-white' :
-          patient.currentStatus === 'WARNING' ? 'bg-amber-500 text-white' :
-          'bg-emerald-500 text-white'
-        }`}>
+        <div className={`px-4 py-2 rounded-xl text-sm font-bold ${getStatusStyles(patient.currentStatus)}`}>
           {patient.currentStatus} · {patient.currentRisk}% Risk
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left - Patient Info */}
         <div className="lg:col-span-1 space-y-4">
           <div className="glass-premium rounded-3xl p-6 border border-white/30">
             <div className="flex items-center gap-4 mb-4">
-              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold text-white ${
-                patient.currentStatus === 'CRITICAL' ? 'bg-red-500' :
-                patient.currentStatus === 'WARNING' ? 'bg-amber-500' :
-                'bg-emerald-500'
-              }`}>
+              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold text-white ${getProfileIconBg(patient.currentStatus)}`}>
                 {patient.name?.charAt(0) || 'P'}
               </div>
               <div>
@@ -155,7 +161,6 @@ export default function PatientDetail() {
             </div>
           </div>
 
-          {/* Quick Stats */}
           <div className="grid grid-cols-2 gap-3">
             <div className="glass-premium rounded-2xl p-4 text-center border border-white/30">
               <p className="text-2xl font-bold text-[#2563EB]">{vitalsHistory.length}</p>
@@ -168,9 +173,7 @@ export default function PatientDetail() {
           </div>
         </div>
 
-        {/* Center - Vitals & Graphs */}
         <div className="lg:col-span-2 space-y-4">
-          {/* Vitals Grid */}
           <div className="grid grid-cols-3 gap-3">
             <div className="glass-premium rounded-2xl p-4 text-center border border-white/30">
               <Heart size={20} className="text-red-500 mx-auto mb-1" />
@@ -204,7 +207,6 @@ export default function PatientDetail() {
             </div>
           </div>
 
-          {/* Risk Trend Graph */}
           <div className="glass-premium rounded-3xl p-6 border border-white/30">
             <h3 className="text-sm font-semibold text-slate-800 mb-4">Risk Trend</h3>
             {riskTrend.length > 0 ? (
@@ -233,7 +235,11 @@ export default function PatientDetail() {
             )}
           </div>
 
-          {/* AI Chatbot */}
+          {/* Clinical Timeline */}
+          <div className="mt-6">
+            <PatientTimeline patientId={id} />
+          </div>
+
           <div className="relative">
             <button
               onClick={() => setShowChat(!showChat)}
@@ -249,7 +255,6 @@ export default function PatientDetail() {
                 exit={{ opacity: 0, y: 20, scale: 0.95 }}
                 className="fixed bottom-24 right-6 w-96 max-w-[90vw] h-[500px] glass-premium rounded-3xl shadow-2xl border border-white/30 flex flex-col z-50"
               >
-                {/* Chat Header */}
                 <div className="p-4 border-b border-white/30 flex items-center justify-between bg-gradient-to-r from-[#2563EB]/5 to-[#06B6D4]/5 rounded-t-3xl">
                   <div className="flex items-center gap-2">
                     <Sparkles size={18} className="text-[#2563EB]" />
@@ -260,7 +265,6 @@ export default function PatientDetail() {
                   </button>
                 </div>
 
-                {/* Chat Messages */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
                   {chatHistory.map((msg, idx) => (
                     <div key={idx} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -286,7 +290,6 @@ export default function PatientDetail() {
                   )}
                 </div>
 
-                {/* Chat Input */}
                 <div className="p-3 border-t border-white/30 flex gap-2">
                   <input
                     type="text"

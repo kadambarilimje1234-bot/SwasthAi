@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-
+const API_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 console.log('🔗 API URL:', API_URL);
 
 // ============================================
@@ -64,7 +64,7 @@ api.interceptors.request.use(
 );
 
 // ============================================
-// RESPONSE INTERCEPTOR - FIXED
+// RESPONSE INTERCEPTOR
 // ============================================
 api.interceptors.response.use(
   (response) => {
@@ -74,7 +74,6 @@ api.interceptors.response.use(
   (error) => {
     console.error('❌ Response error:', error);
     
-    // Don't redirect on 401 for login/register/signup
     const isAuthPage = error.config?.url?.includes('/login') || 
                        error.config?.url?.includes('/register') ||
                        window.location.pathname.includes('/login') ||
@@ -153,4 +152,60 @@ export const predictionAPI = {
   getHighRisk: (params) => api.get('/predict/high-risk', { params }),
 };
 
+// ============================================
+// ✅ TIMELINE API
+// ============================================
+export const timelineAPI = {
+  getByPatient: (patientId) => api.get(`/timeline/patient/${patientId}`),
+  getByEventType: (patientId, eventType) => api.get(`/timeline/patient/${patientId}/type/${eventType}`),
+  create: (data) => api.post('/timeline', data),
+  update: (id, data) => api.put(`/timeline/${id}`, data),
+  delete: (id) => api.delete(`/timeline/${id}`),
+  getLatest: (patientId, limit = 10) => api.get(`/timeline/patient/${patientId}/latest?limit=${limit}`),
+};
+
+// ============================================
+// ✅ ALERT API
+// ============================================
+export const alertAPI = {
+  getAll: (params) => api.get('/alerts', { params }),
+  getByPatient: (patientId) => api.get(`/alerts/patient/${patientId}`),
+  getActive: () => api.get('/alerts/active'),
+  resolve: (id) => api.put(`/alerts/${id}/resolve`),
+  create: (data) => api.post('/alerts', data),
+};
+
+// ============================================
+// ✅ REPORT API
+// ============================================
+export const reportAPI = {
+  getByPatient: (patientId) => api.get(`/reports/patient/${patientId}`),
+  getById: (id) => api.get(`/reports/${id}`),
+  create: (data) => api.post('/reports', data),
+  download: (id) => api.get(`/reports/${id}/download`, { responseType: 'blob' }),
+};
+
+// ============================================
+// ✅ DATA QUALITY API
+// ============================================
+export const dataQualityAPI = {
+  getByPatient: (patientId) => api.get(`/data-quality/patient/${patientId}`),
+  getSummary: () => api.get('/data-quality/summary'),
+  getMissingData: (patientId) => api.get(`/data-quality/patient/${patientId}/missing`),
+};
+
+// ============================================
+// ✅ CHAT API
+// ============================================
+export const chatAPI = {
+  sendMessage: (message, patientData) => api.post('/chat', { message, patientData }),
+  getHistory: (patientId) => api.get(`/chat/patient/${patientId}`),
+  clearHistory: () => api.post('/chat/clear'),
+  health: () => api.get('/chat/health'),
+};
+
+// ============================================
+// DEFAULT EXPORT
+// ============================================
 export default api;
+export const apiClient = api;

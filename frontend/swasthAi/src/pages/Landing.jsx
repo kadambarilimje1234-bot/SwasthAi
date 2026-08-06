@@ -52,6 +52,7 @@ export default function Landing() {
       <nav className="fixed top-0 left-0 right-0 z-50 nav-blur">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
+            {/* Left side - Logo */}
             <div className="flex items-center">
               <img 
                 src="/logo.png" 
@@ -60,33 +61,39 @@ export default function Landing() {
               />
             </div>
             
+            {/* Center - Navigation Links */}
             <div className="hidden md:flex items-center gap-6 text-sm">
               <a href="#features" className="text-slate-600 hover:text-[#2563EB] transition font-medium">Features</a>
               <a href="#how-it-works" className="text-slate-600 hover:text-[#2563EB] transition font-medium">How It Works</a>
               <a href="#about" className="text-slate-600 hover:text-[#2563EB] transition font-medium">About</a>
-              <a href="#documentation" className="text-slate-600 hover:text-[#2563EB] transition font-medium">Documentation</a>
               <a href="#team" className="text-slate-600 hover:text-[#2563EB] transition font-medium">Team</a>
               <a href="#contact" className="text-slate-600 hover:text-[#2563EB] transition font-medium">Contact</a>
-              <div className="flex items-center gap-3">
-                <Link to="/staff-login" className="text-slate-700 font-semibold hover:text-[#2563EB] transition">Staff Login</Link>
-                <span className="text-slate-300">|</span>
-                <Link to="/patient-login" className="text-slate-700 font-semibold hover:text-[#2563EB] transition">Patient Login</Link>
-              </div>
-              <Link to="/signup" className="px-5 py-2 btn-primary rounded-xl text-sm">Get Started</Link>
             </div>
             
+            {/* Right side - Login & Signup */}
+            <div className="hidden md:flex items-center gap-3 text-sm">
+              <Link to="/staff-login" className="text-slate-700 font-semibold hover:text-[#2563EB] transition">Staff Login</Link>
+              <span className="text-slate-300">|</span>
+              <Link to="/patient-login" className="text-slate-700 font-semibold hover:text-[#2563EB] transition">Patient Login</Link>
+              <Link to="/signup" className="ml-2 px-5 py-2 btn-primary rounded-xl text-sm">Get Started</Link>
+            </div>
+            
+            {/* Mobile menu button */}
             <button onClick={() => setMobileMenu(!mobileMenu)} className="md:hidden p-2">
               {mobileMenu ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
         </div>
+        
+        {/* Mobile Menu */}
         {mobileMenu && (
           <div className="md:hidden glass-premium px-4 py-4 space-y-3 border-t border-white/20">
             <a href="#features" className="block text-slate-600 font-medium">Features</a>
             <a href="#how-it-works" className="block text-slate-600 font-medium">How It Works</a>
             <a href="#about" className="block text-slate-600 font-medium">About</a>
-            <a href="#documentation" className="block text-slate-600 font-medium">Documentation</a>
             <a href="#team" className="block text-slate-600 font-medium">Team</a>
+            <a href="#contact" className="block text-slate-600 font-medium">Contact</a>
+            <hr className="border-slate-200/50" />
             <Link to="/staff-login" className="block text-slate-700 font-semibold">Staff Login</Link>
             <Link to="/patient-login" className="block text-slate-700 font-semibold">Patient Login</Link>
             <Link to="/signup" className="block px-4 py-2 btn-primary rounded-xl text-center">Get Started</Link>
@@ -210,7 +217,6 @@ export default function Landing() {
               >
                 <X size={24} />
               </button>
-              {/* ✅ VIDEO - public/demo-vedio.mp4 */}
               <video 
                 src="/demo-vedio.mp4" 
                 controls 
@@ -464,7 +470,7 @@ export default function Landing() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* ✅ DOCUMENTATION CARD - opens research.pdf */}
+            {/* Documentation Card */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }} 
               whileInView={{ opacity: 1, y: 0 }} 
@@ -481,14 +487,13 @@ export default function Landing() {
               </span>
             </motion.div>
 
-            {/* ✅ VIDEO TUTORIALS CARD - opens demo-vedio.mp4 */}
+            {/* Video Tutorials Card */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }} 
               whileInView={{ opacity: 1, y: 0 }} 
               transition={{ delay: 0.1 }}
               className="glass-premium rounded-2xl p-6 card-hover text-center border border-white/30 cursor-pointer group"
               onClick={() => {
-                // Open video in modal or new tab
                 const videoWindow = window.open('', '_blank');
                 videoWindow.document.write(`
                   <!DOCTYPE html>
@@ -511,7 +516,7 @@ export default function Landing() {
               </span>
             </motion.div>
 
-            {/* ✅ RESEARCH PAPERS CARD - opens research.pdf */}
+            {/* Research Papers Card */}
             <motion.div 
               initial={{ opacity: 0, y: 20 }} 
               whileInView={{ opacity: 1, y: 0 }} 

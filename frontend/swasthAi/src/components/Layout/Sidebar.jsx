@@ -14,7 +14,8 @@ import { useAuth } from '../../context/AuthContext';
 const navItems = [
   { path: '/app/dashboard', icon: LayoutDashboard, label: 'Command Center' },
   { path: '/app/patients', icon: User, label: 'Patient View' },
-  { path: '/app/assistant', icon: Bot, label: 'AI Assistant' },
+  // ❌ YEH LINE HATA DO - AI Assistant
+  // { path: '/app/assistant', icon: Bot, label: 'AI Assistant' },
   { path: '/app/emergency', icon: AlertTriangle, label: 'Emergency' },
   { path: '/app/lab', icon: FileUp, label: 'Lab Reports' },
   { path: '/app/analytics', icon: BarChart3, label: 'Analytics' },

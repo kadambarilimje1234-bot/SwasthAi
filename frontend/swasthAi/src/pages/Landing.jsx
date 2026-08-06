@@ -10,7 +10,7 @@ import {
   ChevronDown, ChevronUp,
   Mail, Phone, MapPin,
   Twitter, Linkedin, Github, Youtube,
-  TrendingUp
+  TrendingUp, FileText, BookOpen, Eye, Download
 } from 'lucide-react';
 
 export default function Landing() {
@@ -40,10 +40,10 @@ export default function Landing() {
   ];
 
   const team = [
-    { name: 'Dr. Priya Sharma', role: 'CEO & Co-founder', specialty: 'Critical Care Medicine', avatar: '👩‍⚕️' },
-    { name: 'Dr. Rajesh Kumar', role: 'CTO & Co-founder', specialty: 'AI & ML Research', avatar: '👨‍💻' },
-    { name: 'Dr. Ananya Reddy', role: 'Head of Clinical Research', specialty: 'Infectious Diseases', avatar: '👩‍🔬' },
-    { name: 'Dr. Vikram Singh', role: 'Chief Medical Officer', specialty: 'Emergency Medicine', avatar: '👨‍⚕️' },
+    { name: 'Kadambari Limje', role: 'CEO & Co-founder', specialty: 'Critical Care Medicine', avatar: '👩‍⚕️' },
+    { name: 'Atharva Kashikar', role: 'CTO & Co-founder', specialty: 'AI & ML Research', avatar: '👨‍💻' },
+    { name: 'Anjali Mane', role: 'Head of Animation & Design', specialty: 'UI/UX & Motion Graphics', avatar: '🎨' },
+    { name: 'Gunjan Kokase', role: 'Head of Research', specialty: 'Clinical Research & Analytics', avatar: '🔬' },
   ];
 
   return (
@@ -64,6 +64,7 @@ export default function Landing() {
               <a href="#features" className="text-slate-600 hover:text-[#2563EB] transition font-medium">Features</a>
               <a href="#how-it-works" className="text-slate-600 hover:text-[#2563EB] transition font-medium">How It Works</a>
               <a href="#about" className="text-slate-600 hover:text-[#2563EB] transition font-medium">About</a>
+              <a href="#documentation" className="text-slate-600 hover:text-[#2563EB] transition font-medium">Documentation</a>
               <a href="#team" className="text-slate-600 hover:text-[#2563EB] transition font-medium">Team</a>
               <a href="#contact" className="text-slate-600 hover:text-[#2563EB] transition font-medium">Contact</a>
               <div className="flex items-center gap-3">
@@ -84,6 +85,7 @@ export default function Landing() {
             <a href="#features" className="block text-slate-600 font-medium">Features</a>
             <a href="#how-it-works" className="block text-slate-600 font-medium">How It Works</a>
             <a href="#about" className="block text-slate-600 font-medium">About</a>
+            <a href="#documentation" className="block text-slate-600 font-medium">Documentation</a>
             <a href="#team" className="block text-slate-600 font-medium">Team</a>
             <Link to="/staff-login" className="block text-slate-700 font-semibold">Staff Login</Link>
             <Link to="/patient-login" className="block text-slate-700 font-semibold">Patient Login</Link>
@@ -113,7 +115,6 @@ export default function Landing() {
                 <Link to="/signup" className="px-7 py-3.5 btn-primary rounded-2xl flex items-center gap-2 text-sm">
                   Explore Platform <ArrowRight size={18} />
                 </Link>
-                {/* ✅ WATCH DEMO BUTTON - VIDEO MODAL OPENS */}
                 <button 
                   onClick={() => setShowVideo(true)}
                   className="px-7 py-3.5 btn-secondary rounded-2xl flex items-center gap-2 text-slate-700 text-sm"
@@ -209,25 +210,14 @@ export default function Landing() {
               >
                 <X size={24} />
               </button>
-              
-              {/* ✅ Local Video - public/demo-video.mp4 */}
+              {/* ✅ VIDEO - public/demo-vedio.mp4 */}
               <video 
-                src="/demo-video.mp4" 
+                src="/demo-vedio.mp4" 
                 controls 
                 autoPlay 
                 className="w-full"
                 poster="/video-poster.jpg"
               />
-              
-              {/* ✅ YouTube - Comment above and uncomment below */}
-              {/* <iframe 
-                className="w-full aspect-video"
-                src="https://www.youtube.com/embed/YOUR_VIDEO_ID?autoplay=1&rel=0"
-                title="SwasthAI Demo"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              /> */}
             </motion.div>
           </motion.div>
         )}
@@ -259,7 +249,11 @@ export default function Landing() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="glass-premium rounded-3xl overflow-hidden card-hover group border border-white/30">
               <div className="relative overflow-hidden">
-                <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&h=350&fit=crop&crop=center" alt="Command Center" className="w-full h-52 object-cover group-hover:scale-105 transition duration-500" />
+                <img 
+                  src="https://images.unsplash.com/photo-1666214280429-d3985e2ef0b4?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8N3x8ZG9jdG9ycyUyMHRhbGtpbmd8ZW58MHx8MHx8fDA%3D" 
+                  alt="Command Center" 
+                  className="w-full h-52 object-cover group-hover:scale-105 transition duration-500"
+                />
                 <div className="absolute top-3 right-3 bg-[#2563EB]/90 backdrop-blur text-white text-[10px] font-semibold px-3 py-1 rounded-full">AI Powered</div>
               </div>
               <div className="p-5">
@@ -274,7 +268,11 @@ export default function Landing() {
 
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-premium rounded-3xl overflow-hidden card-hover group border border-white/30">
               <div className="relative overflow-hidden">
-                <img src="https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=600&h=350&fit=crop&crop=center" alt="Patient Details" className="w-full h-52 object-cover group-hover:scale-105 transition duration-500" />
+                <img 
+                  src="https://images.unsplash.com/photo-1706777280252-5de52771cf13?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjB8fHBhdGllbnQlMjBjYXJlfGVufDB8fDB8fHww" 
+                  alt="Patient Details" 
+                  className="w-full h-52 object-cover group-hover:scale-105 transition duration-500"
+                />
                 <div className="absolute top-3 right-3 bg-emerald-500/90 backdrop-blur text-white text-[10px] font-semibold px-3 py-1 rounded-full">Explainable AI</div>
               </div>
               <div className="p-5">
@@ -289,7 +287,11 @@ export default function Landing() {
 
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-premium rounded-3xl overflow-hidden card-hover group border border-white/30">
               <div className="relative overflow-hidden">
-                <img src="https://images.unsplash.com/photo-1579684385127-1ef15d508118?w=600&h=350&fit=crop&crop=center" alt="Analytics" className="w-full h-52 object-cover group-hover:scale-105 transition duration-500" />
+                <img 
+                  src="https://images.unsplash.com/photo-1748609160056-7b95f30041f0?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fHBhdGllbnQlMjBhbmFseXRpY3N8ZW58MHx8MHx8fDA%3D" 
+                  alt="Analytics" 
+                  className="w-full h-52 object-cover group-hover:scale-105 transition duration-500"
+                />
                 <div className="absolute top-3 right-3 bg-[#06B6D4]/90 backdrop-blur text-white text-[10px] font-semibold px-3 py-1 rounded-full">Analytics</div>
               </div>
               <div className="p-5">
@@ -324,7 +326,11 @@ export default function Landing() {
               </Link>
             </motion.div>
             <motion.div initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} className="glass-premium rounded-3xl p-6 card-hover border border-white/30">
-              <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600&h=400&fit=crop&crop=center" alt="Healthcare team" className="rounded-2xl w-full h-64 object-cover" />
+              <img 
+                src="https://media.istockphoto.com/id/1142386206/photo/medicine-and-innovation-concept.webp?a=1&b=1&s=612x612&w=0&k=20&c=XSC_5NEC1WcZ3hzSLgMzthKfJsQfJpHActNMoR_Vchs=" 
+                alt="Healthcare team" 
+                className="rounded-2xl w-full h-64 object-cover"
+              />
               <div className="mt-4 grid grid-cols-3 gap-3 text-center">
                 <div className="bg-white/60 rounded-xl p-2">
                   <p className="text-lg font-bold text-[#2563EB]">50+</p>
@@ -444,28 +450,83 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ========== RESOURCES ========== */}
-      <section className="py-16 bg-slate-50/50">
+      {/* ========== RESOURCES & DOCUMENTATION ========== */}
+      <section id="documentation" className="py-16 bg-slate-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-8">
+          <div className="text-center max-w-2xl mx-auto mb-12">
             <span className="text-[#2563EB] text-sm font-semibold">Resources</span>
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mt-2">Learn more about <span className="gradient-text">SwasthAI</span></h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mt-2">
+              Learn more about <span className="gradient-text">SwasthAI</span>
+            </h2>
+            <p className="text-slate-500 mt-3">
+              Access documentation, video tutorials, and research papers
+            </p>
           </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} className="glass-premium rounded-2xl p-6 card-hover text-center border border-white/30">
-              <div className="w-12 h-12 rounded-xl bg-[#2563EB]/10 flex items-center justify-center mx-auto mb-3">📄</div>
+            {/* ✅ DOCUMENTATION CARD - opens research.pdf */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} 
+              whileInView={{ opacity: 1, y: 0 }} 
+              className="glass-premium rounded-2xl p-6 card-hover text-center border border-white/30 cursor-pointer group"
+              onClick={() => window.open('/research.pdf', '_blank')}
+            >
+              <div className="w-12 h-12 rounded-xl bg-[#2563EB]/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-[#2563EB]/20 transition">
+                <FileText size={24} className="text-[#2563EB]" />
+              </div>
               <h4 className="font-semibold text-slate-800">Documentation</h4>
               <p className="text-xs text-slate-400 mt-1">Complete API and integration guides</p>
+              <span className="inline-block mt-3 text-xs text-[#2563EB] font-medium group-hover:underline">
+                View PDF →
+              </span>
             </motion.div>
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-premium rounded-2xl p-6 card-hover text-center border border-white/30">
-              <div className="w-12 h-12 rounded-xl bg-[#06B6D4]/10 flex items-center justify-center mx-auto mb-3">📹</div>
+
+            {/* ✅ VIDEO TUTORIALS CARD - opens demo-vedio.mp4 */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} 
+              whileInView={{ opacity: 1, y: 0 }} 
+              transition={{ delay: 0.1 }}
+              className="glass-premium rounded-2xl p-6 card-hover text-center border border-white/30 cursor-pointer group"
+              onClick={() => {
+                // Open video in modal or new tab
+                const videoWindow = window.open('', '_blank');
+                videoWindow.document.write(`
+                  <!DOCTYPE html>
+                  <html>
+                    <head><title>SwasthAI Video Tutorial</title></head>
+                    <body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;height:100vh;">
+                      <video controls autoplay style="max-width:90%;max-height:90vh;" src="/demo-vedio.mp4"></video>
+                    </body>
+                  </html>
+                `);
+              }}
+            >
+              <div className="w-12 h-12 rounded-xl bg-[#06B6D4]/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-[#06B6D4]/20 transition">
+                <Play size={24} className="text-[#06B6D4]" />
+              </div>
               <h4 className="font-semibold text-slate-800">Video Tutorials</h4>
               <p className="text-xs text-slate-400 mt-1">Step-by-step platform walkthrough</p>
+              <span className="inline-block mt-3 text-xs text-[#06B6D4] font-medium group-hover:underline">
+                Watch Now →
+              </span>
             </motion.div>
-            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-premium rounded-2xl p-6 card-hover text-center border border-white/30">
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-3">💡</div>
+
+            {/* ✅ RESEARCH PAPERS CARD - opens research.pdf */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }} 
+              whileInView={{ opacity: 1, y: 0 }} 
+              transition={{ delay: 0.2 }}
+              className="glass-premium rounded-2xl p-6 card-hover text-center border border-white/30 cursor-pointer group"
+              onClick={() => window.open('/research.pdf', '_blank')}
+            >
+              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-emerald-500/20 transition">
+                <BookOpen size={24} className="text-emerald-500" />
+              </div>
               <h4 className="font-semibold text-slate-800">Research Papers</h4>
               <p className="text-xs text-slate-400 mt-1">Clinical validation and case studies</p>
+              <span className="inline-block mt-3 text-xs text-emerald-500 font-medium group-hover:underline">
+                Read More →
+              </span>
             </motion.div>
           </div>
         </div>
@@ -481,15 +542,32 @@ export default function Landing() {
           <div className="space-y-3">
             {faqs.map((faq, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="glass-premium rounded-2xl overflow-hidden border border-white/30">
-                <button onClick={() => setOpenFaq(openFaq === i ? null : i)} className="w-full px-6 py-4 flex items-center justify-between text-left">
+                <button 
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)} 
+                  className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-white/20 transition"
+                >
                   <span className="font-medium text-slate-800 text-sm">{faq.q}</span>
-                  {openFaq === i ? <ChevronUp size={18} className="text-[#2563EB]" /> : <ChevronDown size={18} className="text-slate-400" />}
+                  {openFaq === i ? (
+                    <ChevronUp size={18} className="text-[#2563EB] flex-shrink-0 ml-4" />
+                  ) : (
+                    <ChevronDown size={18} className="text-slate-400 flex-shrink-0 ml-4" />
+                  )}
                 </button>
-                {openFaq === i && (
-                  <div className="px-6 pb-4 text-sm text-slate-500 border-t border-white/20 pt-3">
-                    {faq.a}
-                  </div>
-                )}
+                <AnimatePresence>
+                  {openFaq === i && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-6 pb-4 text-sm text-slate-500 leading-relaxed border-t border-white/20 pt-3">
+                        {faq.a}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             ))}
           </div>

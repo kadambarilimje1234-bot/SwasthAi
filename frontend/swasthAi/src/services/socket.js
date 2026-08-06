@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:5000';
+const WS_URL = import.meta.env.VITE_WS_URL || 'wss:https://swasthai-0sa8.onrender.com';
 
 class SocketService {
   constructor() {

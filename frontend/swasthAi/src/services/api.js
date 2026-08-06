@@ -195,13 +195,32 @@ export const dataQualityAPI = {
 };
 
 // ============================================
-// ✅ CHAT API
+// ✅ CHAT API (Authenticated)
 // ============================================
 export const chatAPI = {
   sendMessage: (message, patientData) => api.post('/chat', { message, patientData }),
   getHistory: (patientId) => api.get(`/chat/patient/${patientId}`),
   clearHistory: () => api.post('/chat/clear'),
   health: () => api.get('/chat/health'),
+};
+
+// ============================================
+// ✅ PUBLIC CHAT API (No Authentication - For Landing Page)
+// ============================================
+export const publicChatAPI = {
+  sendMessage: (message, patientData = null) => {
+    console.log('💬 Public Chat Request:', message);
+    // Direct axios call without authentication
+    return axios.post(`${API_URL}/chat/public`, { 
+      message, 
+      patientData 
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      timeout: 30000,
+    });
+  },
 };
 
 // ============================================

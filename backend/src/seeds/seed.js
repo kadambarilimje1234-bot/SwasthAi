@@ -29,7 +29,6 @@ const seedDatabase = async () => {
     console.log('🗑️ All collections cleared');
 
     // ============ CREATE HOSPITAL ============
-    // ✅ Use only valid department values
     const hospital = await Hospital.create({
       hospitalName: 'City District Hospital',
       hospitalCode: 'CDH-001',
@@ -94,8 +93,9 @@ const seedDatabase = async () => {
 
     console.log('👤 All users created');
 
-    // ============ CREATE PATIENTS ============
+    // ============ CREATE PATIENTS (STABLE, WARNING, CRITICAL) WITH WBC & RBC ==========
     const patientsData = [
+      // ========== STABLE PATIENTS (Low Risk: 0-20%) ==========
       {
         name: 'Rahul Sharma',
         age: 58,
@@ -113,7 +113,16 @@ const seedDatabase = async () => {
         currentRisk: 12,
         currentStatus: 'STABLE',
         aiConfidence: 92,
-        vitals: { heartRate: 72, temperature: 98.6, systolicBP: 120, diastolicBP: 80, spo2: 98, respiratoryRate: 16 }
+        vitals: { 
+          heartRate: 72, 
+          temperature: 98.6, 
+          systolicBP: 120, 
+          diastolicBP: 80, 
+          spo2: 98, 
+          respiratoryRate: 16,
+          wbc: 7.2,   // ✅ Normal WBC (4.5-11.0)
+          rbc: 5.1    // ✅ Normal RBC (4.5-5.9)
+        }
       },
       {
         name: 'Priya Patel',
@@ -131,25 +140,16 @@ const seedDatabase = async () => {
         currentRisk: 8,
         currentStatus: 'STABLE',
         aiConfidence: 90,
-        vitals: { heartRate: 68, temperature: 98.4, systolicBP: 110, diastolicBP: 72, spo2: 99, respiratoryRate: 15 }
-      },
-      {
-        name: 'Amit Singh',
-        age: 45,
-        gender: 'Male',
-        ward: 'Ward C',
-        bedNumber: 'C-312',
-        diagnosis: 'Fever',
-        medicalHistory: ['Asthma'],
-        allergies: ['Sulfa'],
-        contactNumber: '+91 98765 43212',
-        email: 'amit@swasthai.com',
-        assignedDoctor: doctor._id,
-        assignedNurse: nurse._id,
-        currentRisk: 15,
-        currentStatus: 'STABLE',
-        aiConfidence: 88,
-        vitals: { heartRate: 78, temperature: 99.2, systolicBP: 115, diastolicBP: 75, spo2: 97, respiratoryRate: 17 }
+        vitals: { 
+          heartRate: 68, 
+          temperature: 98.4, 
+          systolicBP: 110, 
+          diastolicBP: 72, 
+          spo2: 99, 
+          respiratoryRate: 15,
+          wbc: 6.8,
+          rbc: 4.8
+        }
       },
       {
         name: 'Sneha Reddy',
@@ -167,25 +167,182 @@ const seedDatabase = async () => {
         currentRisk: 5,
         currentStatus: 'STABLE',
         aiConfidence: 85,
-        vitals: { heartRate: 72, temperature: 98.6, systolicBP: 110, diastolicBP: 72, spo2: 98, respiratoryRate: 16 }
+        vitals: { 
+          heartRate: 72, 
+          temperature: 98.6, 
+          systolicBP: 110, 
+          diastolicBP: 72, 
+          spo2: 98, 
+          respiratoryRate: 16,
+          wbc: 7.0,
+          rbc: 5.0
+        }
+      },
+
+      // ========== WARNING PATIENTS (Medium Risk: 21-60%) ==========
+      {
+        name: 'Amit Singh',
+        age: 45,
+        gender: 'Male',
+        ward: 'Ward C',
+        bedNumber: 'C-312',
+        diagnosis: 'Fever with infection',
+        medicalHistory: ['Asthma'],
+        allergies: ['Sulfa'],
+        contactNumber: '+91 98765 43212',
+        email: 'amit@swasthai.com',
+        assignedDoctor: doctor._id,
+        assignedNurse: nurse._id,
+        currentRisk: 42,
+        currentStatus: 'WARNING',
+        aiConfidence: 88,
+        vitals: { 
+          heartRate: 82, 
+          temperature: 100.2, 
+          systolicBP: 125, 
+          diastolicBP: 78, 
+          spo2: 96, 
+          respiratoryRate: 19,
+          wbc: 14.5,  // ✅ Elevated WBC - Infection
+          rbc: 4.9
+        }
       },
       {
-        name: 'Vikram Joshi',
-        age: 65,
+        name: 'Deepak Kumar',
+        age: 55,
         gender: 'Male',
-        ward: 'Ward B',
+        ward: 'ICU B',
         bedNumber: 'B-108',
         diagnosis: 'COPD Exacerbation',
         medicalHistory: ['COPD', 'Smoking'],
         allergies: [],
         contactNumber: '+91 98765 43214',
+        email: 'deepak@swasthai.com',
+        assignedDoctor: doctor._id,
+        assignedNurse: nurse._id,
+        currentRisk: 38,
+        currentStatus: 'WARNING',
+        aiConfidence: 86,
+        vitals: { 
+          heartRate: 85, 
+          temperature: 99.8, 
+          systolicBP: 135, 
+          diastolicBP: 82, 
+          spo2: 94, 
+          respiratoryRate: 20,
+          wbc: 12.3,
+          rbc: 5.2
+        }
+      },
+      {
+        name: 'Meera Iyer',
+        age: 48,
+        gender: 'Female',
+        ward: 'Ward B',
+        bedNumber: 'B-205',
+        diagnosis: 'Severe Anemia',
+        medicalHistory: ['Thyroid'],
+        allergies: [],
+        contactNumber: '+91 98765 43215',
+        email: 'meera@swasthai.com',
+        assignedDoctor: doctor._id,
+        assignedNurse: nurse._id,
+        currentRisk: 55,
+        currentStatus: 'WARNING',
+        aiConfidence: 82,
+        vitals: { 
+          heartRate: 90, 
+          temperature: 99.2, 
+          systolicBP: 100, 
+          diastolicBP: 65, 
+          spo2: 97, 
+          respiratoryRate: 18,
+          wbc: 11.8,
+          rbc: 3.2    // ✅ Low RBC - Anemia
+        }
+      },
+
+      // ========== CRITICAL PATIENTS (High Risk: 61-100%) ==========
+      {
+        name: 'Vikram Joshi',
+        age: 65,
+        gender: 'Male',
+        ward: 'ICU A',
+        bedNumber: 'A-301',
+        diagnosis: 'Septic Shock',
+        medicalHistory: ['Diabetes Type 2', 'Heart Disease'],
+        allergies: [],
+        contactNumber: '+91 98765 43216',
         email: 'vikram@swasthai.com',
         assignedDoctor: doctor._id,
         assignedNurse: nurse._id,
-        currentRisk: 18,
-        currentStatus: 'STABLE',
-        aiConfidence: 86,
-        vitals: { heartRate: 85, temperature: 99.8, systolicBP: 125, diastolicBP: 78, spo2: 94, respiratoryRate: 20 }
+        currentRisk: 85,
+        currentStatus: 'CRITICAL',
+        aiConfidence: 80,
+        vitals: { 
+          heartRate: 110, 
+          temperature: 102.4, 
+          systolicBP: 90, 
+          diastolicBP: 60, 
+          spo2: 89, 
+          respiratoryRate: 24,
+          wbc: 22.5,  // ✅ Very High WBC - Severe Infection
+          rbc: 4.1
+        }
+      },
+      {
+        name: 'Sunita Devi',
+        age: 78,
+        gender: 'Female',
+        ward: 'ICU A',
+        bedNumber: 'A-302',
+        diagnosis: 'Stroke with complications',
+        medicalHistory: ['Hypertension', 'Stroke'],
+        allergies: ['Aspirin'],
+        contactNumber: '+91 98765 43217',
+        email: 'sunita@swasthai.com',
+        assignedDoctor: doctor._id,
+        assignedNurse: nurse._id,
+        currentRisk: 92,
+        currentStatus: 'CRITICAL',
+        aiConfidence: 78,
+        vitals: { 
+          heartRate: 95, 
+          temperature: 100.8, 
+          systolicBP: 180, 
+          diastolicBP: 100, 
+          spo2: 92, 
+          respiratoryRate: 22,
+          wbc: 18.7,
+          rbc: 3.8
+        }
+      },
+      {
+        name: 'Rajesh Kumar',
+        age: 52,
+        gender: 'Male',
+        ward: 'ICU B',
+        bedNumber: 'B-309',
+        diagnosis: 'ARDS / Respiratory Failure',
+        medicalHistory: ['Smoking', 'COPD'],
+        allergies: [],
+        contactNumber: '+91 98765 43218',
+        email: 'rajesh@swasthai.com',
+        assignedDoctor: doctor._id,
+        assignedNurse: nurse._id,
+        currentRisk: 75,
+        currentStatus: 'CRITICAL',
+        aiConfidence: 83,
+        vitals: { 
+          heartRate: 100, 
+          temperature: 99.6, 
+          systolicBP: 140, 
+          diastolicBP: 85, 
+          spo2: 87, 
+          respiratoryRate: 26,
+          wbc: 16.3,
+          rbc: 4.5
+        }
       }
     ];
 
@@ -210,10 +367,17 @@ const seedDatabase = async () => {
       await patient.save();
       createdPatients.push(patient);
 
-      // Create vitals
+      // ============ CREATE VITALS WITH WBC & RBC ============
       const vitals = new Vitals({
         patient: patient._id,
-        ...vitalsData,
+        heartRate: vitalsData.heartRate,
+        temperature: vitalsData.temperature,
+        systolicBP: vitalsData.systolicBP,
+        diastolicBP: vitalsData.diastolicBP,
+        spo2: vitalsData.spo2,
+        respiratoryRate: vitalsData.respiratoryRate,
+        wbc: vitalsData.wbc || null,      // ✅ NEW
+        rbc: vitalsData.rbc || null,      // ✅ NEW
         recordedBy: nurse._id,
         isAbnormal: patientData.currentRisk >= 60,
         riskScore: patientData.currentRisk,
@@ -226,7 +390,7 @@ const seedDatabase = async () => {
       });
       await vitals.save();
 
-      // Create prediction
+      // ============ CREATE PREDICTION WITH WBC & RBC FACTORS ============
       const prediction = new Prediction({
         patient: patient._id,
         vitals: vitals._id,
@@ -240,7 +404,10 @@ const seedDatabase = async () => {
         status: patientData.currentStatus,
         topFactors: [
           { feature: 'Temperature', impact: 10, direction: 'positive' },
-          { feature: 'Heart Rate', impact: 8, direction: 'positive' }
+          { feature: 'Heart Rate', impact: 8, direction: 'positive' },
+          { feature: 'WBC', impact: 7, direction: 'positive' },   // ✅ NEW
+          { feature: 'RBC', impact: 3, direction: 'negative' },   // ✅ NEW
+          { feature: 'SpO2', impact: 5, direction: 'negative' }
         ],
         recommendations: ['Monitor vitals every 2 hours']
       });
@@ -262,7 +429,7 @@ const seedDatabase = async () => {
       });
       await timeline.save();
 
-      console.log(`✅ Patient created: ${patient.name} (${patientData.currentRisk}%)`);
+      console.log(`✅ Patient created: ${patient.name} (${patientData.currentRisk}%) - ${patientData.currentStatus} | WBC: ${vitalsData.wbc || 'N/A'} | RBC: ${vitalsData.rbc || 'N/A'}`);
     }
 
     // Update patient user reference
@@ -278,6 +445,9 @@ const seedDatabase = async () => {
     console.log(`👤 Nurse: nurse@swasthai.com / nurse123`);
     console.log(`👤 Patient: patient@swasthai.com / patient123`);
     console.log(`📊 ${createdPatients.length} patients created`);
+    console.log(`   ✅ STABLE: 3 patients (Normal WBC & RBC)`);
+    console.log(`   ⚠️ WARNING: 3 patients (Elevated WBC, Low RBC)`);
+    console.log(`   🔴 CRITICAL: 3 patients (Very High WBC)`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     process.exit(0);

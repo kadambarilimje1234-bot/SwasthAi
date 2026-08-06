@@ -10,16 +10,14 @@ const path = require('path');
 
 dotenv.config();
 
-// Import database connection
 const connectDB = require('./src/config/database');
 
-// Import routes
 const authRoutes = require('./src/routs/authRoutes');
 const patientRoutes = require('./src/routs/patientRoutes');
 const vitalsRoutes = require('./src/routs/vitalsRoutes');
 const predictionRoutes = require('./src/routs/predictionRoutes');
+const timelineRoutes = require('./src/routs/timelineRoutes');
 
-// Import middleware
 const { errorHandler } = require('./src/middleware/errorHandler');
 const { authenticate } = require('./src/middleware/auth');
 
@@ -36,7 +34,6 @@ const io = new Server(httpServer, {
   pingInterval: 25000
 });
 
-// ============ CORS ============
 app.use(cors({
   origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5000'],
   credentials: true,
@@ -44,14 +41,12 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// ============ RATE LIMITING ============
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   message: 'Too many requests from this IP, please try again later.'
 });
 
-// ============ MIDDLEWARE ============
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
@@ -59,19 +54,17 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/api', limiter);
 
-// ============ REQUEST LOGGING ============
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
 });
 
-// ============ ROUTES ============
 app.use('/api/auth', authRoutes);
 app.use('/api/patients', authenticate, patientRoutes);
 app.use('/api/vitals', authenticate, vitalsRoutes);
 app.use('/api/predict', authenticate, predictionRoutes);
+app.use('/api/timeline', authenticate, timelineRoutes);
 
-// ============ HEALTH CHECK ============
 app.get('/api/health', (req, res) => {
   const dbState = mongoose.connection.readyState;
   const states = {
@@ -90,7 +83,6 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// ============ 404 HANDLER ============
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -98,10 +90,8 @@ app.use((req, res) => {
   });
 });
 
-// ============ ERROR HANDLER ============
 app.use(errorHandler);
 
-// ============ WEBSOCKET ============
 io.on('connection', (socket) => {
   console.log('🟢 New client connected:', socket.id);
 
@@ -136,7 +126,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// ============ START SERVER ============
 const startServer = async () => {
   try {
     await connectDB();
@@ -156,7 +145,6 @@ const startServer = async () => {
 
 startServer();
 
-// ============ GRACEFUL SHUTDOWN ============
 process.on('SIGINT', async () => {
   console.log('🛑 Shutting down gracefully...');
   await mongoose.connection.close();
@@ -166,5 +154,4 @@ process.on('SIGINT', async () => {
   });
 });
 
-// ✅ YEH LINE IMPORTANT HAI - io export karo
 module.exports = { io };

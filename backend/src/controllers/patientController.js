@@ -5,10 +5,8 @@ const Alert = require('../models/Alert');
 const Timeline = require('../models/Timeline');
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
+const TimelineService = require('../services/timelineService');
 
-// ============================================
-// 1. GET ALL PATIENTS
-// ============================================
 exports.getAllPatients = async (req, res) => {
   try {
     const patients = await Patient.find({ isActive: true })
@@ -35,9 +33,6 @@ exports.getAllPatients = async (req, res) => {
   }
 };
 
-// ============================================
-// 2. GET HIGH RISK PATIENTS
-// ============================================
 exports.getHighRiskPatients = async (req, res) => {
   try {
     const { threshold = 60 } = req.query;
@@ -69,9 +64,6 @@ exports.getHighRiskPatients = async (req, res) => {
   }
 };
 
-// ============================================
-// 3. GET PATIENTS BY WARD
-// ============================================
 exports.getPatientsByWard = async (req, res) => {
   try {
     const { ward } = req.params;
@@ -99,9 +91,6 @@ exports.getPatientsByWard = async (req, res) => {
   }
 };
 
-// ============================================
-// 4. GET PATIENT BY ID
-// ============================================
 exports.getPatientById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -144,9 +133,6 @@ exports.getPatientById = async (req, res) => {
   }
 };
 
-// ============================================
-// 5. CREATE PATIENT WITH USER ACCOUNT (FIXED)
-// ============================================
 exports.createPatient = async (req, res) => {
   try {
     console.log('📝 Creating patient with data:', req.body);
@@ -169,7 +155,6 @@ exports.createPatient = async (req, res) => {
       address
     } = req.body;
 
-    // Validate
     if (!name || !age || !gender || !ward) {
       return res.status(400).json({
         success: false,
@@ -177,7 +162,6 @@ exports.createPatient = async (req, res) => {
       });
     }
 
-    // Check email
     let userId = null;
     let user = null;
 
@@ -206,7 +190,6 @@ exports.createPatient = async (req, res) => {
       }
     }
 
-    // Create patient
     const timestamp = Date.now();
     const random = Math.floor(Math.random() * 1000);
 
@@ -240,24 +223,22 @@ exports.createPatient = async (req, res) => {
     await patient.save();
     console.log('✅ Patient created:', patient.name);
 
-    // Update user with patient reference
     if (user) {
       user.patientId = patient._id;
       await user.save();
     }
 
-    // Timeline
     try {
-      const timeline = new Timeline({
+      await TimelineService.addEvent({
         patient: patient._id,
         eventType: 'ADMISSION',
-        title: 'Patient Admitted',
+        title: '🏥 Patient Admitted',
         description: `Admitted to ${ward}${diagnosis ? ` with diagnosis: ${diagnosis}` : ''}`,
         eventTime: new Date(),
         createdBy: req.user?.id || null,
-        isImportant: true
+        isImportant: true,
+        severity: 'MEDIUM'
       });
-      await timeline.save();
     } catch (timelineError) {
       console.warn('Timeline creation failed:', timelineError.message);
     }
@@ -285,9 +266,6 @@ exports.createPatient = async (req, res) => {
   }
 };
 
-// ============================================
-// 6. UPDATE PATIENT
-// ============================================
 exports.updatePatient = async (req, res) => {
   try {
     const { id } = req.params;
@@ -330,9 +308,6 @@ exports.updatePatient = async (req, res) => {
   }
 };
 
-// ============================================
-// 7. DELETE PATIENT
-// ============================================
 exports.deletePatient = async (req, res) => {
   try {
     const { id } = req.params;
@@ -371,9 +346,6 @@ exports.deletePatient = async (req, res) => {
   }
 };
 
-// ============================================
-// 8. GET PATIENT FULL DETAILS
-// ============================================
 exports.getPatientFullDetails = async (req, res) => {
   try {
     const { id } = req.params;
@@ -430,9 +402,6 @@ exports.getPatientFullDetails = async (req, res) => {
   }
 };
 
-// ============================================
-// 9. GET PATIENT TREND
-// ============================================
 exports.getPatientTrend = async (req, res) => {
   try {
     const { id } = req.params;
@@ -483,9 +452,6 @@ exports.getPatientTrend = async (req, res) => {
   }
 };
 
-// ============================================
-// 10. GET STATS SUMMARY
-// ============================================
 exports.getStatsSummary = async (req, res) => {
   try {
     const totalPatients = await Patient.countDocuments({ isActive: true });
@@ -535,9 +501,6 @@ exports.getStatsSummary = async (req, res) => {
   }
 };
 
-// ============================================
-// 11. DISCHARGE PATIENT
-// ============================================
 exports.dischargePatient = async (req, res) => {
   try {
     const { id } = req.params;
@@ -559,17 +522,20 @@ exports.dischargePatient = async (req, res) => {
 
     await patient.save();
 
-    const timeline = new Timeline({
-      patient: patient._id,
-      eventType: 'DISCHARGE',
-      title: 'Patient Discharged',
-      description: dischargeNotes || 'Patient discharged from hospital',
-      eventTime: new Date(),
-      createdBy: req.user.id,
-      isImportant: true
-    });
-
-    await timeline.save();
+    try {
+      await TimelineService.addEvent({
+        patient: patient._id,
+        eventType: 'DISCHARGE',
+        title: '🏥 Patient Discharged',
+        description: dischargeNotes || 'Patient discharged from hospital',
+        eventTime: new Date(),
+        createdBy: req.user.id,
+        isImportant: true,
+        severity: 'MEDIUM'
+      });
+    } catch (timelineError) {
+      console.warn('Timeline discharge failed:', timelineError.message);
+    }
 
     res.json({
       success: true,
@@ -586,9 +552,6 @@ exports.dischargePatient = async (req, res) => {
   }
 };
 
-// ============================================
-// 12. SEARCH PATIENTS
-// ============================================
 exports.searchPatients = async (req, res) => {
   try {
     const { q } = req.query;
@@ -627,9 +590,6 @@ exports.searchPatients = async (req, res) => {
   }
 };
 
-// ============================================
-// 13. GET PATIENT TIMELINE
-// ============================================
 exports.getPatientTimeline = async (req, res) => {
   try {
     const { id } = req.params;

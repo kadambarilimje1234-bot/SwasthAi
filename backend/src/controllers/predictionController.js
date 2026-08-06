@@ -2,10 +2,8 @@ const Prediction = require('../models/Prediction');
 const Patient = require('../models/Patient');
 const Vitals = require('../models/Vitals');
 const Alert = require('../models/Alert');
+const TimelineService = require('../services/timelineService');
 
-// ============================================
-// 1. GET PATIENT PREDICTIONS
-// ============================================
 exports.getPatientPredictions = async (req, res) => {
   try {
     const { patientId } = req.params;
@@ -42,9 +40,6 @@ exports.getPatientPredictions = async (req, res) => {
   }
 };
 
-// ============================================
-// 2. GET LATEST PREDICTION
-// ============================================
 exports.getLatestPrediction = async (req, res) => {
   try {
     const { patientId } = req.params;
@@ -61,6 +56,22 @@ exports.getLatestPrediction = async (req, res) => {
       });
     }
 
+    try {
+      await TimelineService.addPredictionEvent(
+        patientId,
+        {
+          _id: prediction._id,
+          riskScore: prediction.riskScore,
+          riskLevel: prediction.riskLevel,
+          confidence: prediction.confidence,
+          topFactors: prediction.topFactors || []
+        },
+        req.user?.id || null
+      );
+    } catch (timelineError) {
+      console.warn('⚠️ Timeline prediction event failed:', timelineError.message);
+    }
+
     res.json({
       success: true,
       data: prediction
@@ -75,9 +86,6 @@ exports.getLatestPrediction = async (req, res) => {
   }
 };
 
-// ============================================
-// 3. GET RISK SUMMARY
-// ============================================
 exports.getRiskSummary = async (req, res) => {
   try {
     const { patientId } = req.params;
@@ -96,14 +104,12 @@ exports.getRiskSummary = async (req, res) => {
 
     const patient = await Patient.findById(patientId);
 
-    // Calculate trend
     const trend = predictions.map(p => p.riskScore).reverse();
     const trendDirection = trend.length > 1 ? 
       (trend[trend.length - 1] - trend[0]) / trend.length : 0;
 
     const latestPrediction = predictions[0];
 
-    // Get recent alerts
     const alerts = await Alert.find({ patient: patientId })
       .sort({ createdAt: -1 })
       .limit(5);
@@ -131,9 +137,6 @@ exports.getRiskSummary = async (req, res) => {
   }
 };
 
-// ============================================
-// 4. GET HIGH RISK PATIENTS
-// ============================================
 exports.getHighRiskPatients = async (req, res) => {
   try {
     const { threshold = 60, limit = 20 } = req.query;
@@ -152,7 +155,6 @@ exports.getHighRiskPatients = async (req, res) => {
         options: { sort: { recordedTime: -1 }, limit: 1 }
       });
 
-    // Get latest predictions for each patient
     const patientIds = patients.map(p => p._id);
     const latestPredictions = await Prediction.find({
       patient: { $in: patientIds }
@@ -160,7 +162,6 @@ exports.getHighRiskPatients = async (req, res) => {
       .sort({ createdAt: -1 })
       .populate('vitals');
 
-    // Group by patient
     const predictionMap = {};
     latestPredictions.forEach(p => {
       if (!predictionMap[p.patient]) {
@@ -187,30 +188,23 @@ exports.getHighRiskPatients = async (req, res) => {
   }
 };
 
-// ============================================
-// 5. GET PREDICTION ANALYTICS
-// ============================================
 exports.getPredictionAnalytics = async (req, res) => {
   try {
     const { days = 30 } = req.query;
     const since = new Date(Date.now() - parseInt(days) * 24 * 60 * 60 * 1000);
 
-    // Get all predictions in date range
     const predictions = await Prediction.find({
       createdAt: { $gte: since }
     })
       .populate('patient', 'name ward currentStatus');
 
-    // Calculate analytics
     const total = predictions.length;
     const highRisk = predictions.filter(p => p.riskScore >= 70).length;
     const mediumRisk = predictions.filter(p => p.riskScore >= 40 && p.riskScore < 70).length;
     const lowRisk = predictions.filter(p => p.riskScore < 40).length;
 
-    // Average confidence
     const avgConfidence = predictions.reduce((sum, p) => sum + p.confidence, 0) / (total || 1);
 
-    // Risk trend by day
     const dailyTrend = {};
     predictions.forEach(p => {
       const day = p.createdAt.toISOString().split('T')[0];
@@ -222,7 +216,6 @@ exports.getPredictionAnalytics = async (req, res) => {
       dailyTrend[day].sum = dailyTrend[day].total / dailyTrend[day].count;
     });
 
-    // Ward-wise distribution
     const wardDistribution = {};
     predictions.forEach(p => {
       const ward = p.patient?.ward || 'Unknown';
@@ -234,7 +227,6 @@ exports.getPredictionAnalytics = async (req, res) => {
       wardDistribution[ward].total = wardDistribution[ward].riskSum / wardDistribution[ward].count;
     });
 
-    // Get top factors across all predictions
     const factorMap = {};
     predictions.forEach(p => {
       if (p.topFactors && p.topFactors.length > 0) {
@@ -286,9 +278,6 @@ exports.getPredictionAnalytics = async (req, res) => {
   }
 };
 
-// ============================================
-// 6. GET PREDICTION BY ID
-// ============================================
 exports.getPredictionById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -318,26 +307,20 @@ exports.getPredictionById = async (req, res) => {
   }
 };
 
-// ============================================
-// 7. GET PREDICTION STATS
-// ============================================
 exports.getPredictionStats = async (req, res) => {
   try {
     const totalPredictions = await Prediction.countDocuments();
     const totalPatients = await Patient.countDocuments({ isActive: true });
 
-    // Get last 7 days predictions
     const last7Days = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const recentPredictions = await Prediction.countDocuments({
       createdAt: { $gte: last7Days }
     });
 
-    // Get average risk score
     const avgRisk = await Prediction.aggregate([
       { $group: { _id: null, avg: { $avg: '$riskScore' } } }
     ]);
 
-    // Get model versions
     const modelVersions = await Prediction.aggregate([
       { $group: { _id: '$modelVersion', count: { $sum: 1 } } }
     ]);
@@ -365,9 +348,6 @@ exports.getPredictionStats = async (req, res) => {
   }
 };
 
-// ============================================
-// 8. GET PREDICTIONS BY DATE RANGE
-// ============================================
 exports.getPredictionsByDateRange = async (req, res) => {
   try {
     const { from, to, patientId } = req.query;
@@ -409,12 +389,8 @@ exports.getPredictionsByDateRange = async (req, res) => {
   }
 };
 
-// ============================================
-// 9. GET PREDICTION SUMMARY (Dashboard)
-// ============================================
 exports.getPredictionSummary = async (req, res) => {
   try {
-    // Get today's predictions
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
@@ -424,13 +400,11 @@ exports.getPredictionSummary = async (req, res) => {
       createdAt: { $gte: today, $lt: tomorrow }
     });
 
-    // Get critical predictions
     const criticalPredictions = await Prediction.countDocuments({
       riskScore: { $gte: 80 },
       createdAt: { $gte: today, $lt: tomorrow }
     });
 
-    // Get patients with increasing risk
     const increasingRisk = await Patient.find({
       isActive: true,
       currentStatus: { $ne: 'DISCHARGED' }
@@ -443,7 +417,6 @@ exports.getPredictionSummary = async (req, res) => {
       return last > previous;
     });
 
-    // Get top 5 highest risk patients
     const topRiskPatients = await Patient.find({
       isActive: true,
       currentStatus: { $ne: 'DISCHARGED' }

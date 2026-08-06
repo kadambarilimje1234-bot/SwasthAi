@@ -5,8 +5,8 @@ const Alert = require('../models/Alert');
 const Timeline = require('../models/Timeline');
 const DataQuality = require('../models/DataQuality');
 const mlService = require('../services/mlService');
+const TimelineService = require('../services/timelineService');
 
-// Try to import io, but don't fail if not available
 let io = null;
 try {
   io = require('../../server').io;
@@ -14,9 +14,6 @@ try {
   console.warn('⚠️ WebSocket not available, continuing without it');
 }
 
-// ============================================
-// 1. ADD VITALS WITH ML PREDICTION
-// ============================================
 exports.addVitals = async (req, res) => {
   try {
     const {
@@ -30,7 +27,6 @@ exports.addVitals = async (req, res) => {
       notes
     } = req.body;
 
-    // Validate
     if (!patientId || !temperature || !heartRate || !systolicBP || !diastolicBP || !respiratoryRate || !spo2) {
       return res.status(400).json({
         success: false,
@@ -38,7 +34,6 @@ exports.addVitals = async (req, res) => {
       });
     }
 
-    // Find patient
     const patient = await Patient.findById(patientId);
     if (!patient) {
       return res.status(404).json({
@@ -47,7 +42,6 @@ exports.addVitals = async (req, res) => {
       });
     }
 
-    // Check abnormal
     const isAbnormal = (
       heartRate > 100 || heartRate < 60 ||
       temperature > 100.4 || temperature < 97.0 ||
@@ -57,7 +51,6 @@ exports.addVitals = async (req, res) => {
       respiratoryRate > 22 || respiratoryRate < 12
     );
 
-    // ============ DATA QUALITY ============
     const missingFields = [];
     let completenessScore = 100;
 
@@ -86,7 +79,6 @@ exports.addVitals = async (req, res) => {
       completenessScore -= 15;
     }
 
-    // Create vitals record
     const vitals = new Vitals({
       patient: patientId,
       temperature,
@@ -105,7 +97,6 @@ exports.addVitals = async (req, res) => {
       }
     });
 
-    // ============ ML PREDICTION WITH TIMEOUT ============
     const vitalsData = {
       heartRate,
       temperature,
@@ -118,7 +109,6 @@ exports.addVitals = async (req, res) => {
       previousRisk: patient.currentRisk || 0
     };
 
-    // ✅ ML prediction with 10 second timeout
     const mlResult = await Promise.race([
       mlService.predict(vitalsData),
       new Promise((_, reject) => setTimeout(() => reject(new Error('ML prediction timeout')), 10000))
@@ -130,7 +120,6 @@ exports.addVitals = async (req, res) => {
 
     await vitals.save();
 
-    // ============ CREATE PREDICTION ============
     const prediction = new Prediction({
       patient: patientId,
       vitals: vitals._id,
@@ -155,7 +144,6 @@ exports.addVitals = async (req, res) => {
 
     await prediction.save();
 
-    // ============ UPDATE PATIENT ============
     patient.currentRisk = mlResult.riskScore;
     patient.currentStatus = mlResult.status;
     patient.aiConfidence = mlResult.confidence;
@@ -170,7 +158,6 @@ exports.addVitals = async (req, res) => {
 
     await patient.save();
 
-    // ============ DATA QUALITY RECORD ============
     const dataQuality = new DataQuality({
       patient: patientId,
       vitalsId: vitals._id,
@@ -183,7 +170,68 @@ exports.addVitals = async (req, res) => {
 
     await dataQuality.save();
 
-    // ============ CREATE TIMELINE EVENT ============
+    // ============ TIMELINE EVENTS ============
+    try {
+      await TimelineService.addVitalsEvent(
+        patientId,
+        {
+          heartRate,
+          temperature,
+          systolicBP,
+          diastolicBP,
+          respiratoryRate,
+          spo2
+        },
+        req.user.id
+      );
+
+      await TimelineService.addSepsisRiskEvent(
+        patientId,
+        mlResult.riskScore,
+        {
+          riskScore: mlResult.riskScore,
+          riskLevel: mlResult.riskLevel,
+          confidence: mlResult.confidence,
+          status: mlResult.status
+        },
+        req.user.id
+      );
+
+      await TimelineService.addPredictionEvent(
+        patientId,
+        {
+          _id: prediction._id,
+          riskScore: mlResult.riskScore,
+          riskLevel: mlResult.riskLevel,
+          confidence: mlResult.confidence,
+          topFactors: mlResult.topFactors || []
+        },
+        req.user.id
+      );
+
+      const oldStatus = patient.currentStatus || 'STABLE';
+      if (oldStatus !== mlResult.status) {
+        await TimelineService.addStatusChangeEvent(
+          patientId,
+          oldStatus,
+          mlResult.status,
+          `AI prediction updated status to ${mlResult.status}`,
+          req.user.id
+        );
+      }
+
+      if (mlResult.alertGenerated) {
+        await TimelineService.addAlertEvent(
+          patientId,
+          mlResult.riskScore >= 80 ? 'CRITICAL_SEPSIS_RISK' : 'RISK_INCREASE',
+          mlResult.alertMessage || `Risk increased to ${mlResult.riskScore}%`,
+          req.user.id
+        );
+      }
+    } catch (timelineError) {
+      console.warn('⚠️ Timeline event failed:', timelineError.message);
+    }
+
     const timeline = new Timeline({
       patient: patientId,
       eventType: 'VITALS_RECORDED',
@@ -201,7 +249,6 @@ exports.addVitals = async (req, res) => {
 
     await timeline.save();
 
-    // ============ CREATE ALERT ============
     if (mlResult.alertGenerated) {
       const alert = new Alert({
         patient: patientId,
@@ -217,7 +264,6 @@ exports.addVitals = async (req, res) => {
       await alert.save();
       patient.alerts.push(alert._id);
 
-      // WebSocket emit with try-catch
       if (io) {
         try {
           io.emit('alert-triggered', {
@@ -255,7 +301,6 @@ exports.addVitals = async (req, res) => {
 
     await patient.save();
 
-    // ============ EMIT WEBSOCKET EVENTS ============
     if (io) {
       try {
         io.to(`ward-${patient.ward}`).emit('vitals-updated', {
@@ -322,9 +367,6 @@ exports.addVitals = async (req, res) => {
   }
 };
 
-// ============================================
-// 2. GET VITALS HISTORY
-// ============================================
 exports.getVitalsHistory = async (req, res) => {
   try {
     const { patientId } = req.params;
@@ -360,9 +402,6 @@ exports.getVitalsHistory = async (req, res) => {
   }
 };
 
-// ============================================
-// 3. GET LATEST VITALS
-// ============================================
 exports.getLatestVitals = async (req, res) => {
   try {
     const { patientId } = req.params;
@@ -392,9 +431,6 @@ exports.getLatestVitals = async (req, res) => {
   }
 };
 
-// ============================================
-// 4. GET VITALS BY ID
-// ============================================
 exports.getVitalsById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -424,9 +460,6 @@ exports.getVitalsById = async (req, res) => {
   }
 };
 
-// ============================================
-// 5. GET VITALS WITH DATA QUALITY
-// ============================================
 exports.getVitalsQuality = async (req, res) => {
   try {
     const { patientId } = req.params;
@@ -457,9 +490,6 @@ exports.getVitalsQuality = async (req, res) => {
   }
 };
 
-// ============================================
-// 6. GET ALL VITALS (for analytics)
-// ============================================
 exports.getAllVitals = async (req, res) => {
   try {
     const { limit = 100, skip = 0, from, to } = req.query;
@@ -478,7 +508,6 @@ exports.getAllVitals = async (req, res) => {
 
     const total = await Vitals.countDocuments(query);
 
-    // Get statistics
     const stats = await Vitals.aggregate([
       { $match: query },
       { $group: {
@@ -519,9 +548,6 @@ exports.getAllVitals = async (req, res) => {
   }
 };
 
-// ============================================
-// 7. GET VITALS TREND (for charts)
-// ============================================
 exports.getVitalsTrend = async (req, res) => {
   try {
     const { patientId } = req.params;
@@ -536,7 +562,6 @@ exports.getVitalsTrend = async (req, res) => {
       .sort({ recordedTime: 1 })
       .select('heartRate temperature systolicBP diastolicBP spo2 respiratoryRate recordedTime riskScore');
 
-    // Format for charts
     const trend = {
       labels: vitals.map(v => v.recordedTime),
       heartRate: vitals.map(v => v.heartRate),
@@ -562,9 +587,6 @@ exports.getVitalsTrend = async (req, res) => {
   }
 };
 
-// ============================================
-// 8. GET ABNORMAL VITALS
-// ============================================
 exports.getAbnormalVitals = async (req, res) => {
   try {
     const { patientId } = req.params;
@@ -591,9 +613,6 @@ exports.getAbnormalVitals = async (req, res) => {
   }
 };
 
-// ============================================
-// 9. DELETE VITALS (Admin Only)
-// ============================================
 exports.deleteVitals = async (req, res) => {
   try {
     const { id } = req.params;
@@ -633,9 +652,6 @@ exports.deleteVitals = async (req, res) => {
   }
 };
 
-// ============================================
-// 10. GET RECENT VITALS (for dashboard)
-// ============================================
 exports.getRecentVitals = async (req, res) => {
   try {
     const { limit = 20 } = req.query;
@@ -660,9 +676,6 @@ exports.getRecentVitals = async (req, res) => {
   }
 };
 
-// ============================================
-// 11. GET VITALS SUMMARY (for analytics)
-// ============================================
 exports.getVitalsSummary = async (req, res) => {
   try {
     const { days = 7 } = req.query;

@@ -9,11 +9,13 @@ import {
   X, Phone, Mail, MapPin, Sparkles,
   Download, Eye, Stethoscope, LogOut,
   Brain, Shield, Award, UserCircle, RefreshCw,
-  PhoneCall, Video
+  PhoneCall, Video, Printer, Share2, Copy,
+  UserPlus, UserCheck
 } from 'lucide-react';
 import { patientAPI, vitalsAPI, predictionAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import AIReport from '../components/AIReport';
 
 export default function PatientDashboard() {
   const navigate = useNavigate();
@@ -30,6 +32,9 @@ export default function PatientDashboard() {
     { type: 'ai', message: 'Hello! I\'m your AI Health Assistant. How can I help you today?' }
   ]);
 
+  // ✅ AI REPORT STATE
+  const [showAIReport, setShowAIReport] = useState(false);
+
   // ============ APPOINTMENTS STATE ============
   const [appointments, setAppointments] = useState([]);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
@@ -41,12 +46,7 @@ export default function PatientDashboard() {
   });
   const [selectedAppointment, setSelectedAppointment] = useState(null);
 
-  // ============ LAB REPORTS STATE ============
-  const [labReports, setLabReports] = useState([]);
-  const [showLabReportModal, setShowLabReportModal] = useState(false);
-  const [selectedLabReport, setSelectedLabReport] = useState(null);
-
-  // ============ DOCTORS LIST ============
+  // ============ DEFAULT DOCTORS LIST ============
   const doctorsList = [
     { id: 1, name: 'Dr. Priya Sharma', specialization: 'Internal Medicine', hospital: 'City District Hospital', email: 'priya.sharma@hospital.com', phone: '+91 98765 43210' },
     { id: 2, name: 'Dr. Amit Kumar', specialization: 'Cardiology', hospital: 'City District Hospital', email: 'amit.kumar@hospital.com', phone: '+91 98765 43211' },
@@ -54,7 +54,13 @@ export default function PatientDashboard() {
     { id: 4, name: 'Dr. Vikram Singh', specialization: 'Orthopedics', hospital: 'City District Hospital', email: 'vikram.singh@hospital.com', phone: '+91 98765 43213' },
   ];
 
-  // ============ GET GREETING BASED ON TIME ============
+  const nursesList = [
+    { id: 1, name: 'Nurse Rajesh Kumar', phone: '+91 98765 43221', email: 'rajesh@hospital.com' },
+    { id: 2, name: 'Nurse Sunita Devi', phone: '+91 98765 43222', email: 'sunita@hospital.com' },
+    { id: 3, name: 'Nurse Anil Singh', phone: '+91 98765 43223', email: 'anil@hospital.com' },
+  ];
+
+  // ============ GET GREETING ============
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 12) return 'Good Morning';
@@ -151,38 +157,6 @@ export default function PatientDashboard() {
         setAppointments(defaultAppointments);
         localStorage.setItem(`appointments_${patientData._id}`, JSON.stringify(defaultAppointments));
       }
-
-      // Load lab reports from localStorage
-      const savedReports = localStorage.getItem(`labReports_${patientData._id}`);
-      if (savedReports) {
-        setLabReports(JSON.parse(savedReports));
-      } else {
-        const defaultReports = [
-          { 
-            id: Date.now(), 
-            name: 'Complete Blood Count', 
-            date: '10 Aug 2026', 
-            status: 'Normal',
-            details: 'All parameters are within normal range. WBC: 7.2, RBC: 5.1, Hemoglobin: 14.2'
-          },
-          { 
-            id: Date.now() + 1, 
-            name: 'Liver Function Test', 
-            date: '05 Aug 2026', 
-            status: 'Normal',
-            details: 'Liver enzymes are within normal range. ALT: 28, AST: 22, ALP: 65'
-          },
-          { 
-            id: Date.now() + 2, 
-            name: 'Kidney Function Test', 
-            date: '28 Jul 2026', 
-            status: 'Abnormal',
-            details: 'Creatinine slightly elevated. Creatinine: 1.8, Urea: 42, eGFR: 65'
-          },
-        ];
-        setLabReports(defaultReports);
-        localStorage.setItem(`labReports_${patientData._id}`, JSON.stringify(defaultReports));
-      }
       
     } catch (error) {
       console.error('Error fetching patient data:', error);
@@ -192,61 +166,51 @@ export default function PatientDashboard() {
     }
   };
 
-  // ============ ✅ FIXED: Doctor & Nurse Helper Functions ============
+  // ============ ✅ FIXED: Doctor & Nurse Functions with Default Assign ============
   const getDoctorName = () => {
     if (patient?.assignedDoctor) {
       if (typeof patient.assignedDoctor === 'object') {
-        return patient.assignedDoctor.name || 'Not Assigned';
+        return patient.assignedDoctor.name || 'Dr. Priya Sharma';
       }
-      const doctor = doctorsList.find(d => 
-        d.id === patient.assignedDoctor || 
-        d.name === patient.assignedDoctor
-      );
-      return doctor?.name || 'Not Assigned';
+      // If it's an ID, find from doctorsList
+      const doc = doctorsList.find(d => d.id === patient.assignedDoctor || d.name === patient.assignedDoctor);
+      return doc?.name || 'Dr. Priya Sharma';
     }
-    return 'Not Assigned';
+    // ✅ DEFAULT DOCTOR - Agar assigned nahi hai toh default doctor show karo
+    return 'Dr. Priya Sharma';
   };
 
   const getDoctorSpecialization = () => {
     if (patient?.assignedDoctor) {
       if (typeof patient.assignedDoctor === 'object') {
-        return patient.assignedDoctor.specialization || 'General Medicine';
+        return patient.assignedDoctor.specialization || 'Internal Medicine';
       }
-      const doctor = doctorsList.find(d => 
-        d.id === patient.assignedDoctor || 
-        d.name === patient.assignedDoctor
-      );
-      return doctor?.specialization || 'General Medicine';
+      const doc = doctorsList.find(d => d.id === patient.assignedDoctor || d.name === patient.assignedDoctor);
+      return doc?.specialization || 'Internal Medicine';
     }
-    return 'General Medicine';
+    return 'Internal Medicine';
   };
 
   const getDoctorHospital = () => {
     if (patient?.assignedDoctor) {
       if (typeof patient.assignedDoctor === 'object') {
-        return patient.assignedDoctor.hospital || 'City Hospital';
+        return patient.assignedDoctor.hospital || 'City District Hospital';
       }
-      const doctor = doctorsList.find(d => 
-        d.id === patient.assignedDoctor || 
-        d.name === patient.assignedDoctor
-      );
-      return doctor?.hospital || 'City Hospital';
+      const doc = doctorsList.find(d => d.id === patient.assignedDoctor || d.name === patient.assignedDoctor);
+      return doc?.hospital || 'City District Hospital';
     }
-    return 'City Hospital';
+    return 'City District Hospital';
   };
 
   const getDoctorEmail = () => {
     if (patient?.assignedDoctor) {
       if (typeof patient.assignedDoctor === 'object') {
-        return patient.assignedDoctor.email || 'doctor@hospital.com';
+        return patient.assignedDoctor.email || 'priya.sharma@hospital.com';
       }
-      const doctor = doctorsList.find(d => 
-        d.id === patient.assignedDoctor || 
-        d.name === patient.assignedDoctor
-      );
-      return doctor?.email || 'doctor@hospital.com';
+      const doc = doctorsList.find(d => d.id === patient.assignedDoctor || d.name === patient.assignedDoctor);
+      return doc?.email || 'priya.sharma@hospital.com';
     }
-    return 'doctor@hospital.com';
+    return 'priya.sharma@hospital.com';
   };
 
   const getDoctorPhone = () => {
@@ -254,11 +218,8 @@ export default function PatientDashboard() {
       if (typeof patient.assignedDoctor === 'object') {
         return patient.assignedDoctor.phone || '+91 98765 43210';
       }
-      const doctor = doctorsList.find(d => 
-        d.id === patient.assignedDoctor || 
-        d.name === patient.assignedDoctor
-      );
-      return doctor?.phone || '+91 98765 43210';
+      const doc = doctorsList.find(d => d.id === patient.assignedDoctor || d.name === patient.assignedDoctor);
+      return doc?.phone || '+91 98765 43210';
     }
     return '+91 98765 43210';
   };
@@ -266,31 +227,32 @@ export default function PatientDashboard() {
   const getNurseName = () => {
     if (patient?.assignedNurse) {
       if (typeof patient.assignedNurse === 'object') {
-        return patient.assignedNurse.name || 'Not Assigned';
+        return patient.assignedNurse.name || 'Nurse Rajesh Kumar';
       }
-      return 'Nurse ' + patient.assignedNurse;
+      return 'Nurse Rajesh Kumar';
     }
-    return 'Not Assigned';
+    // ✅ DEFAULT NURSE - Agar assigned nahi hai toh default nurse show karo
+    return 'Nurse Rajesh Kumar';
   };
 
   const getNursePhone = () => {
     if (patient?.assignedNurse) {
       if (typeof patient.assignedNurse === 'object') {
-        return patient.assignedNurse.phone || '+91 98765 43211';
+        return patient.assignedNurse.phone || '+91 98765 43221';
       }
-      return '+91 98765 43211';
+      return '+91 98765 43221';
     }
-    return '+91 98765 43211';
+    return '+91 98765 43221';
   };
 
   const getNurseEmail = () => {
     if (patient?.assignedNurse) {
       if (typeof patient.assignedNurse === 'object') {
-        return patient.assignedNurse.email || 'nurse@hospital.com';
+        return patient.assignedNurse.email || 'rajesh@hospital.com';
       }
-      return 'nurse@hospital.com';
+      return 'rajesh@hospital.com';
     }
-    return 'nurse@hospital.com';
+    return 'rajesh@hospital.com';
   };
 
   // ============ APPOINTMENT FUNCTIONS ============
@@ -340,16 +302,6 @@ export default function PatientDashboard() {
     }
   };
 
-  // ============ LAB REPORT FUNCTIONS ============
-  const handleViewReport = (report) => {
-    setSelectedLabReport(report);
-    setShowLabReportModal(true);
-  };
-
-  const handleDownloadReport = (report) => {
-    toast.success(`Downloading ${report.name}...`);
-  };
-
   const handleLogout = () => {
     localStorage.clear();
     toast.success('Logged out successfully');
@@ -374,12 +326,15 @@ export default function PatientDashboard() {
         response = `Your blood pressure is ${latest.systolicBP || '120'}/${latest.diastolicBP || '80'} mmHg. Normal range is 90-140/60-90 mmHg. ${latest.systolicBP > 140 ? '⚠️ This is slightly high. Please consult your doctor.' : '✅ This is within normal range.'}`;
       } else if (msg.includes('temp') || msg.includes('temperature')) {
         response = `Your temperature is ${latest.temperature || '98.6'}°F. Normal range is 97.0-100.4°F. ${latest.temperature > 100.4 ? '⚠️ You have a fever. Please consult your doctor.' : '✅ This is within normal range.'}`;
-      } else if (msg.includes('report') || msg.includes('lab')) {
-        response = `You have ${labReports.length} lab reports available. Check the Lab Reports section to view them.`;
       } else if (msg.includes('appointment')) {
         response = `You have ${appointments.length} upcoming appointments. Check the Appointments section for details.`;
       } else {
-        response = `Based on your latest vitals, your health status is ${patient?.currentStatus || 'STABLE'}. Keep monitoring your health regularly.`;
+        const risk = patient?.currentRisk || 0;
+        const statusText = risk >= 80 ? 'CRITICAL - Please consult your doctor immediately!' : 
+                          risk >= 60 ? 'HIGH - Please monitor closely' : 
+                          risk >= 40 ? 'MEDIUM - Regular monitoring recommended' : 
+                          'LOW - Keep maintaining your health';
+        response = `Based on your latest vitals, your health status is ${statusText}`;
       }
       
       setChatHistory(prev => [...prev, { type: 'ai', message: response }]);
@@ -389,6 +344,14 @@ export default function PatientDashboard() {
 
   // Get latest vitals
   const latestVitals = vitals[0] || {};
+
+  // ============ ✅ FIXED: RISK ZONE ============
+  const getRiskZone = (risk) => {
+    if (risk >= 80) return { text: 'CRITICAL', color: 'text-red-600', bg: 'bg-red-100 border-red-200', emoji: '🚨' };
+    if (risk >= 60) return { text: 'HIGH', color: 'text-orange-600', bg: 'bg-orange-100 border-orange-200', emoji: '⚠️' };
+    if (risk >= 40) return { text: 'MEDIUM', color: 'text-amber-600', bg: 'bg-amber-100 border-amber-200', emoji: '📊' };
+    return { text: 'LOW', color: 'text-emerald-600', bg: 'bg-emerald-100 border-emerald-200', emoji: '✅' };
+  };
 
   // Calculate health score
   const calculateHealthScore = () => {
@@ -411,6 +374,8 @@ export default function PatientDashboard() {
     return { text: 'Critical', color: 'text-red-600', bg: 'bg-red-50' };
   };
 
+  // ✅ FIXED: Risk zone based on actual risk score
+  const riskZone = getRiskZone(patient?.currentRisk || 0);
   const status = getStatus(healthScore);
   const greeting = getGreeting();
   const patientName = patient?.name || user?.name || 'Patient';
@@ -455,9 +420,12 @@ export default function PatientDashboard() {
 
   const notifications = [
     { title: 'Appointment Reminder', message: 'Visit to doctor tomorrow at 10:00 AM', time: '2 hours ago', type: 'appointment' },
-    { title: 'Lab Report Ready', message: 'Your CBC report is available', time: '1 day ago', type: 'lab' },
-    { title: 'Health Update', message: 'Your health status is STABLE', time: '3 days ago', type: 'health' },
+    { title: 'Health Update', message: `Your health status is ${riskZone.text}`, time: '1 day ago', type: 'health' },
   ];
+
+  // ✅ Check if doctor/nurse is assigned or using default
+  const isDoctorAssigned = patient?.assignedDoctor && typeof patient.assignedDoctor === 'object';
+  const isNurseAssigned = patient?.assignedNurse && typeof patient.assignedNurse === 'object';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50/30 via-white to-cyan-50/30">
@@ -480,7 +448,7 @@ export default function PatientDashboard() {
                 className="p-2 rounded-xl hover:bg-slate-100 transition relative"
               >
                 <Bell size={20} className="text-slate-600" />
-                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">3</span>
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">2</span>
               </button>
               <button 
                 onClick={fetchPatientData}
@@ -550,7 +518,26 @@ export default function PatientDashboard() {
               </div>
             </div>
             
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4">
+              {/* ✅ AI REPORT BUTTON */}
+              <button
+                onClick={() => setShowAIReport(true)}
+                className="px-4 py-2.5 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl text-sm font-medium hover:opacity-90 transition flex items-center gap-2 shadow-lg shadow-blue-500/25"
+              >
+                <FileText size={18} />
+                Generate AI Report
+              </button>
+
+              {/* ✅ FIXED: RISK ZONE BADGE */}
+              <div className={`px-4 py-2 rounded-xl border ${riskZone.bg}`}>
+                <p className={`text-sm font-bold ${riskZone.color}`}>
+                  {riskZone.emoji} Risk: {riskZone.text}
+                </p>
+                <p className="text-xs text-slate-500 text-center">
+                  {patient.currentRisk || 0}% Score
+                </p>
+              </div>
+
               <div className="text-center">
                 <div className="relative w-20 h-20">
                   <svg className="w-20 h-20 -rotate-90">
@@ -568,15 +555,6 @@ export default function PatientDashboard() {
                   </span>
                 </div>
                 <p className={`text-xs font-medium ${status.color}`}>{status.text}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-800">AI Summary</p>
-                <div className="space-y-0.5 text-xs text-slate-500">
-                  <p className="flex items-center gap-1"><CheckCircle size={12} className="text-emerald-500" /> Heart Rate: {latestVitals.heartRate || '--'} bpm</p>
-                  <p className="flex items-center gap-1"><CheckCircle size={12} className="text-emerald-500" /> BP: {latestVitals.systolicBP || '--'}/{latestVitals.diastolicBP || '--'} mmHg</p>
-                  <p className="flex items-center gap-1"><CheckCircle size={12} className="text-emerald-500" /> SpO2: {latestVitals.spo2 || '--'}%</p>
-                  <p className="flex items-center gap-1"><CheckCircle size={12} className="text-emerald-500" /> Status: {patient.currentStatus || 'STABLE'}</p>
-                </div>
               </div>
             </div>
           </div>
@@ -604,7 +582,7 @@ export default function PatientDashboard() {
           </div>
         </div>
 
-        {/* ===== DOCTOR & NURSE - FIXED WITH REAL NAMES ===== */}
+        {/* ===== DOCTOR & NURSE - FIXED WITH DEFAULT ASSIGN ===== */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Doctor Card */}
           <motion.div 
@@ -612,9 +590,16 @@ export default function PatientDashboard() {
             animate={{ opacity: 1, x: 0 }}
             className="glass-premium rounded-3xl p-6 border border-white/30"
           >
-            <h3 className="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
-              <Stethoscope size={18} className="text-[#2563EB]" /> My Doctor
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                <Stethoscope size={18} className="text-[#2563EB]" /> My Doctor
+              </h3>
+              {!isDoctorAssigned && (
+                <span className="text-[10px] px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full">
+                  Default Assigned
+                </span>
+              )}
+            </div>
             <div className="flex items-start gap-4">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#2563EB] to-[#06B6D4] flex items-center justify-center text-white text-xl font-bold">
                 {getDoctorName().charAt(0) || 'D'}
@@ -642,9 +627,16 @@ export default function PatientDashboard() {
             animate={{ opacity: 1, x: 0 }}
             className="glass-premium rounded-3xl p-6 border border-white/30"
           >
-            <h3 className="text-sm font-semibold text-slate-800 mb-4 flex items-center gap-2">
-              <UserCircle size={18} className="text-[#06B6D4]" /> My Nurse
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                <UserCircle size={18} className="text-[#06B6D4]" /> My Nurse
+              </h3>
+              {!isNurseAssigned && (
+                <span className="text-[10px] px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full">
+                  Default Assigned
+                </span>
+              )}
+            </div>
             <div className="flex items-start gap-4">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#06B6D4] to-[#2563EB] flex items-center justify-center text-white text-xl font-bold">
                 {getNurseName().charAt(0) || 'N'}
@@ -728,48 +720,6 @@ export default function PatientDashboard() {
           </div>
         </div>
 
-        {/* ===== LAB REPORTS ===== */}
-        <div>
-          <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <FileText size={20} className="text-[#2563EB]" /> Lab Reports
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {labReports.map((report, i) => (
-              <motion.div
-                key={report.id || i}
-                whileHover={{ y: -2 }}
-                className="glass-premium rounded-2xl p-4 border border-white/30"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-slate-800">{report.name}</p>
-                    <p className="text-xs text-slate-400">{report.date}</p>
-                  </div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${
-                    report.status === 'Normal' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'
-                  }`}>
-                    {report.status}
-                  </span>
-                </div>
-                <div className="flex gap-2 mt-3">
-                  <button 
-                    onClick={() => handleViewReport(report)}
-                    className="flex-1 py-1.5 bg-[#2563EB]/10 text-[#2563EB] rounded-xl text-xs font-medium hover:bg-[#2563EB]/20 transition flex items-center justify-center gap-1"
-                  >
-                    <Eye size={12} /> View
-                  </button>
-                  <button 
-                    onClick={() => handleDownloadReport(report)}
-                    className="flex-1 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-medium hover:bg-slate-200 transition flex items-center justify-center gap-1"
-                  >
-                    <Download size={12} /> Download
-                  </button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-
         {/* ===== AI SUMMARY ===== */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
@@ -788,7 +738,7 @@ export default function PatientDashboard() {
                 ✅ BP: {latestVitals.systolicBP || '--'}/{latestVitals.diastolicBP || '--'} mmHg<br />
                 ✅ SpO2: {latestVitals.spo2 || '--'}% (Normal: 95-100)<br />
                 ✅ Temperature: {latestVitals.temperature || '--'}°F (Normal: 97.0-100.4)<br />
-                ✅ Status: {patient.currentStatus || 'STABLE'}
+                ✅ Status: {riskZone.emoji} {riskZone.text}
               </p>
             </div>
             <div className="bg-white/30 rounded-2xl p-4 border border-white/30">
@@ -888,63 +838,15 @@ export default function PatientDashboard() {
         )}
       </AnimatePresence>
 
-      {/* ========== LAB REPORT VIEW MODAL ========== */}
-      <AnimatePresence>
-        {showLabReportModal && selectedLabReport && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={() => setShowLabReportModal(false)}
-          >
-            <motion.div 
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="glass-premium rounded-3xl p-6 max-w-md w-full border border-white/30"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-800">{selectedLabReport.name}</h3>
-                  <p className="text-sm text-slate-400">{selectedLabReport.date}</p>
-                </div>
-                <button onClick={() => setShowLabReportModal(false)} className="p-2 rounded-xl hover:bg-slate-100 transition">
-                  <X size={20} className="text-slate-400" />
-                </button>
-              </div>
-
-              <div className={`px-3 py-1.5 rounded-full inline-block text-sm font-medium ${
-                selectedLabReport.status === 'Normal' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'
-              }`}>
-                Status: {selectedLabReport.status}
-              </div>
-
-              <div className="mt-4 p-4 bg-slate-50/80 rounded-xl border border-white/30">
-                <p className="text-sm text-slate-600 whitespace-pre-wrap">
-                  {selectedLabReport.details || 'No additional details available for this report.'}
-                </p>
-              </div>
-
-              <div className="flex gap-3 mt-4">
-                <button 
-                  onClick={() => handleDownloadReport(selectedLabReport)}
-                  className="flex-1 py-2.5 bg-[#2563EB] text-white rounded-xl flex items-center justify-center gap-2 hover:bg-[#2563EB]/90 transition"
-                >
-                  <Download size={16} /> Download Report
-                </button>
-                <button 
-                  onClick={() => setShowLabReportModal(false)}
-                  className="flex-1 py-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition"
-                >
-                  Close
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* ========== ✅ AI REPORT MODAL ========== */}
+      <AIReport 
+        isOpen={showAIReport}
+        onClose={() => setShowAIReport(false)}
+        patient={patient}
+        latestVitals={latestVitals}
+        vitals={vitals}
+        predictions={predictions}
+      />
 
       {/* ========== FLOATING AI CHAT BUTTON ========== */}
       <div className="fixed bottom-6 right-6 z-50">

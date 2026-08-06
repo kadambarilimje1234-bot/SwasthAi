@@ -43,6 +43,22 @@ const vitalsSchema = new mongoose.Schema({
     min: 50,
     max: 100
   },
+  // ✅ NEW: WBC (White Blood Cells)
+  wbc: {
+    type: Number,
+    required: false,
+    min: 0.5,
+    max: 50,
+    default: null
+  },
+  // ✅ NEW: RBC (Red Blood Cells)
+  rbc: {
+    type: Number,
+    required: false,
+    min: 1.0,
+    max: 8.0,
+    default: null
+  },
   recordedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

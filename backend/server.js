@@ -25,7 +25,7 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: ['https://swasthai-0sa8.onrender.com'],
+    origin: ['https://swasthai-5.onrender.com'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -35,7 +35,7 @@ const io = new Server(httpServer, {
 });
 
 app.use(cors({
-  origin: ['https://swasthai-0sa8.onrender.com'],
+  origin: ['https://swasthai-5.onrender.com'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
